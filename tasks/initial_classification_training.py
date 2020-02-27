@@ -39,7 +39,7 @@ def train_mnist_digit_models():
     test_set = MNIST('data\\MNIST\\test\\', train=False, download=True, transform=trans)
 
     # MNIST digit dataset values
-    input_size = np.prod(train_set.data.shape[1:]) #784
+    input_size = np.prod(train_set.data.shape[1:])
     output_size = len(train_set.classes)
 
     # Use torch data loader
