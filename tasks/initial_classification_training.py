@@ -2,10 +2,9 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-from torchvision.datasets import MNIST
-from torchvision.transforms import ToTensor, Compose
 
 from models import ConvClassificationModel, NonConvClassificationModel
+from data import get_data
 
 def set_seed(seed_val: int):
     torch.manual_seed(seed_val)
@@ -31,12 +30,9 @@ def train_mnist_digit_models():
     momentum = 0.5
     batch_size = 64
 
-    # Define transform
-    trans = Compose([ToTensor()])
-
     # Download MNIST data set
-    train_set = MNIST('data\\MNIST\\train\\', train=True, download=True, transform=trans)
-    test_set = MNIST('data\\MNIST\\test\\', train=False, download=True, transform=trans)
+    train_set = get_data('MNIST', True)
+    test_set = get_data('MNIST', False)
 
     # MNIST digit dataset values
     input_size = np.prod(train_set.data.shape[1:])

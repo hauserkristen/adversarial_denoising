@@ -1,74 +1,77 @@
-def test_with_random_noise(test_data, network, num_points):
-    network.eval()
-    set_seed()
-    
-    with torch.no_grad():
-        num_correct = 0.0
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+from models import ConvClassificationModel, NonConvClassificationModel
+from data import get_data
+
+def set_seed(seed_val: int):
+    torch.manual_seed(seed_val)
+    np.random.seed(seed_val)
+
+
+def evaluate_noise(net, data_name, noise_name, b_size, seed_val):
+    test_data = get_data(data_name, False, noise_name)
+    test_data_loader = torch.utils.data.DataLoader(test_data, b_size, shuffle=True)
+
+    set_seed(seed_val)
+    acc = net.eval_model(test_data_loader)
+
+    return [1], [acc]
         
-        for data, y_actual in test_data:
-            if isinstance(network, NonConvModel):
-                data = data.view(data.shape[0], -1)
-                
-                # Choose n random pixel to perturb
-                num_examples = data.shape[0]
-                pixel_loc = np.random.randint(data.shape[0]-1, size=(num_examples,num_points))
-                pixel_val = np.random.rand(num_examples, num_points)
 
-                for j in range(num_examples):
-                    for i in range(num_points):
-                        p_loc = pixel_loc[j,i]
-                        p_val = pixel_val[j,i]
+def plot_accuracy(data, labels, title):
+    fig = plt.figure()
+    plt.xlabel('% Image Replaced with Noise')
+    plt.ylabel('Accuracy (%)')
 
-                        data[j,p_loc] = p_val
-            else:
-                num_examples = data.shape[0]
-                num_rows = data.shape[-2]
-                num_cols = data.shape[-1]
-                
-                # Choose n random pixel to perturb
-                pixel_row_loc = np.random.randint(num_rows-1, size=(num_examples,num_points))
-                pixel_col_loc = np.random.randint(num_cols-1, size=(num_examples,num_points))
-                pixel_val = np.random.rand(num_examples, num_points)
-
-                for j in range(num_examples):
-                    for i in range(num_points):
-                        p_row = pixel_row_loc[j, i]
-                        p_col = pixel_col_loc[j, i]
-                        p_val = pixel_val[j,i]
-                        
-                        data[j,:,p_row,p_col] = p_val
-                
-            # Retrieve log probabilities of class labels
-            y_pred = network(data)
-            
-            # Identify max prediction value
-            y_max_pred = y_pred.data.max(1, keepdim=True)[1]
-            
-            # Count the number correct
-            num_correct += y_max_pred.eq(y_actual.data.view_as(y_max_pred)).sum()
-
-        return (float(num_correct) / len(test_data.dataset))
-    
-def evaluate_random_noise(test_data, net):
-    base_acc = test_with_random_noise(test_data, net, 0)
-    accuracies = [base_acc]
-    num_noisy_points = [0]
-    for i in range(1,input_size//2, 10):
-        acc = test_with_random_noise(test_data, net, i)
-        accuracies.append(acc)
-        num_noisy_points.append(i)
+    for i, net_data in enumerate(data):
+        plt.plot(*net_data, label=labels[i]) 
         
-    fig, ax = plt.subplots()
-    ax.plot(num_noisy_points, accuracies) 
-    ax.set_xlabel('Number of Noisy Points')
-    ax.set_ylabel('Accuracy (%)')
-    if isinstance(net, ConvModel):
-        ax.set_title('Convolutional Classification')
-    else:
-        ax.set_title('Non-Convolutional Classification')
-
+    fig.suptitle(title)
+    plt.legend()
     plt.show()
 
+
 def visualize_noisy_affects_accuracy():
-    evaluate_random_noise(test_loader, nonconv_net)
-    evaluate_random_noise(test_loader, conv_net)
+     # Hyper parameters
+    seed = 2
+    batch_size = 64
+    data_name = 'MNIST'
+
+    # Download MNIST data set
+    test_set = get_data(data_name, False)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size, shuffle=True)
+
+    # MNIST digit dataset values
+    input_size = np.prod(test_set.data.shape[1:])
+    output_size = len(test_set.classes)
+
+    # Create models
+    nonconv_net = NonConvClassificationModel(input_size, output_size)
+    conv_net = ConvClassificationModel()
+
+    # Load models
+    nonconv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_nonconv.model'))
+    conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
+
+    # Get base accuracy
+    set_seed(seed)
+    base_nonconv_acc = nonconv_net.eval_model(test_loader)
+    set_seed(seed)
+    base_conv_acc = conv_net.eval_model(test_loader)
+
+    # Evaluate noise
+    nonconv_percent, nonconv_acc = evaluate_noise(nonconv_net, 'MNIST', 'gaussian', batch_size, seed)
+    conv_percent, conv_acc = evaluate_noise(conv_net, 'MNIST', 'gaussian', batch_size, seed)
+
+    # Insert base accuracy
+    nonconv_percent.insert(0,0)
+    nonconv_acc.insert(0, base_nonconv_acc)
+    conv_percent.insert(0,0)
+    conv_acc.insert(0, base_conv_acc)
+
+    # Plot results
+    labels = ['Non-Convolutional Network', 'Convolutional Network']
+    data = [(nonconv_percent, nonconv_acc), (conv_percent, conv_acc)]
+    plot_accuracy(data, labels, 'Gaussian Noise')
