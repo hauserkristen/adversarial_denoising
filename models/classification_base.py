@@ -5,14 +5,11 @@ import torch.nn as nn
 from torch.optim import Optimizer
 
 class ClassificationModel(nn.Module):
-    def __init__(self, input_size: int, output_size: int):
-        super(ClassificationModel, self).__init__()
-
     @abc.abstractmethod
     def _transform_input(self, input_data: np.ndarray):
         raise NotImplementedError('Define input transformation.')
 
-    def train(self, train_data: torch.utils.data.DataLoader, loss_func: nn.Module, optimizer: Optimizer):
+    def train_model(self, train_data: torch.utils.data.DataLoader, loss_func: nn.Module, optimizer: Optimizer):
         super(ClassificationModel, self).train()
         
         for data, label in train_data:
@@ -30,7 +27,7 @@ class ClassificationModel(nn.Module):
             # Take a step
             optimizer.step()
 
-    def eval(self, test_data: torch.utils.data.DataLoader):
+    def eval_model(self, test_data: torch.utils.data.DataLoader):
         super(ClassificationModel, self).eval()
         
         with torch.no_grad():
@@ -55,6 +52,6 @@ class ClassificationModel(nn.Module):
         self.load_state_dict(model_state_dict, strict=False)
 
     def save(self):
-        model_state_dict = self.model.state_dict()
+        model_state_dict = self.state_dict()
         model_numpy = {key: value.numpy() for key, value in model_state_dict.items()}
         return model_numpy
