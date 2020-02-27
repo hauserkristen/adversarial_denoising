@@ -7,34 +7,27 @@ from torchvision.transforms import ToTensor, Compose
 
 from models import ConvClassificationModel, NonConvClassificationModel
 
-def get_divisors(n):
-    divisors = []
-    for i in range(1, int(n / 2) + 1):
-        if n % i == 0:
-            divisors.append((i, n//i))
-    return divisors
-    
-def plot_filter_layer(filter_layer, conv_layer):
-    num_output_channels = filter_layer.shape[0]
-    num_input_channels = filter_layer.shape[1]
+def plot_filter_layer(filter_layers):
+    # Visualize each filter
+    for filter_index, filter_layer in enumerate(filter_layers):
+        num_output_channels = filter_layer.shape[0]
+        num_input_channels = filter_layer.shape[1]
 
-    for n in range(num_input_channels):
-        divisors = get_divisors(num_output_channels)
-        div_dist = [np.abs(divisors[i][0] - divisors[i][1]) for i in range(len(divisors))]
-        min_index = div_dist.index(np.min(div_dist))
-        num_rows, num_cols = divisors[min_index]
+        # Create figure
+        fig = plt.figure(figsize=(10,10)) 
 
-        fig = plt.figure(figsize=(5, 5)) 
-        fig.suptitle('Convolutional Filters: Layer {}, Channel: {}'.format(conv_layer, n), fontsize=16)
-        gs = gridspec.GridSpec(num_rows, num_cols)
-
-        for i in range(num_rows):
-            for j in range(num_cols):
-                ax = plt.subplot(gs[i,j])
-                ax.imshow(filter_layer[i*num_rows+j,n,:,:], cmap='gray')
+        for o in range(num_output_channels):
+            for i in range(num_input_channels):
+                # Get filter
+                vis_filter = filter_layer[o,i,:,:]
+                # Plot
+                ax = plt.subplot2grid((vis_filter.shape[0], vis_filter.shape[1]), (o,i))
+                ax.imshow(vis_filter, cmap='gray')
                 ax.axis('off')
-
-    plt.show()
+                ax.set_title('Conv Layer: {}\nI/O Channel: {}/{}'.format(filter_index, i, o))
+        
+        plt.tight_layout()
+        plt.show()
 
 def visualize_filters():
     # Define transform
@@ -59,7 +52,8 @@ def visualize_filters():
     #TODO
 
     # Plot convolutional filters
-    filters1 = conv_net.conv1.weight.detach().numpy()
-    filters2 = conv_net.conv2.weight.detach().numpy()
-    plot_filter_layer(filters1, 1)
-    plot_filter_layer(filters2, 2)
+    filters = [
+        conv_net.conv1.weight.detach().numpy(),
+        conv_net.conv2.weight.detach().numpy()
+    ]
+    plot_filter_layer(filters)

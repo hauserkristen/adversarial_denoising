@@ -68,6 +68,7 @@ def evaluate_random_noise(test_data, net):
         ax.set_title('Non-Convolutional Classification')
 
     plt.show()
-    
-evaluate_random_noise(test_loader, nonconv_net)
-evaluate_random_noise(test_loader, conv_net)
+
+def visualize_noisy_affects_accuracy():
+    evaluate_random_noise(test_loader, nonconv_net)
+    evaluate_random_noise(test_loader, conv_net)
