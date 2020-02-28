@@ -39,7 +39,7 @@ def plot_accuracy(data, labels, title):
 
 
 def visualize_noisy_affects_accuracy():
-     # Hyper parameters
+    # Hyper parameters
     seed = 2
     batch_size = 64
     data_name = 'MNIST'
