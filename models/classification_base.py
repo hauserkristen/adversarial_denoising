@@ -9,6 +9,10 @@ class ClassificationModel(nn.Module):
     def _transform_input(self, input_data: np.ndarray):
         raise NotImplementedError('Define input transformation.')
 
+    def classify(self, data: torch.Tensor):
+        transformed_data = self._transform_input(data)
+        return self(transformed_data)
+
     def train_model(self, train_data: torch.utils.data.DataLoader, loss_func: nn.Module, optimizer: Optimizer):
         super(ClassificationModel, self).train()
         
@@ -17,8 +21,7 @@ class ClassificationModel(nn.Module):
             optimizer.zero_grad()
             
             # Predict
-            transformed_data = self._transform_input(data)
-            pred_probabilities = self(transformed_data)
+            pred_probabilities = self.classify(data)
             
             # Calculate loss (assumes probatility and index format)
             loss = loss_func(pred_probabilities, label)
@@ -35,8 +38,7 @@ class ClassificationModel(nn.Module):
             
             for data, label in test_data:
                 # Predict
-                transformed_data = self._transform_input(data)
-                pred_probabilities = self(transformed_data)
+                pred_probabilities = self.classify(data)
                 
                 # Identify max prediction probability
                 pred_label = pred_probabilities.data.max(1, keepdim=True)[1]
@@ -55,3 +57,7 @@ class ClassificationModel(nn.Module):
         model_state_dict = self.state_dict()
         model_numpy = {key: value.numpy() for key, value in model_state_dict.items()}
         return model_numpy
+
+    @abc.abstractproperty
+    def num_classes(self):
+        raise NotImplementedError('Define number of output classes for classification task.')

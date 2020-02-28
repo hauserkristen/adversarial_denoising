@@ -4,30 +4,38 @@ import matplotlib.pyplot as plt
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
+from adv_attacks import FGSM, OnePixel
 
 def set_seed(seed_val: int):
     torch.manual_seed(seed_val)
     np.random.seed(seed_val)
 
 
-def evaluate_noise(net, data_name, noise_name, b_size, seed_val):
-    percent_noise = [0.1, 0.2, 0.3, 0.4, 0.5]
+def evaluate_fgsm_attack(net, test_data, loss_func, seed_val):
+    epsilon = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     accuracies = []
-    for p in percent_noise:
+    for e in epsilon:
         set_seed(seed_val)
-        test_data = get_data(data_name, False, noise_name, p)
-        test_data_loader = torch.utils.data.DataLoader(test_data, b_size, shuffle=True)
-
-        set_seed(seed_val)
-        acc = net.eval_model(test_data_loader)
+        attack = FGSM(e)
+        acc = attack.run(net, test_data, loss_func)
         accuracies.append(acc)
 
-    return percent_noise, accuracies
-        
+    return epsilon, accuracies
 
-def plot_accuracy(data, labels, title):
+def evaluate_onepixel_attack(net, test_data, loss_func, seed_val):
+    num_pixels = [1, 2, 3, 4, 5, 7, 10]
+    accuracies = []
+    for n in num_pixels:
+        set_seed(seed_val)
+        attack = OnePixel(100, 400, n)
+        acc = attack.run(net, test_data, loss_func)
+        accuracies.append(acc)
+
+    return num_pixels, accuracies   
+
+def plot_accuracy(data, labels, title, axis_label):
     fig = plt.figure()
-    plt.xlabel('% Image Replaced with Noise')
+    plt.xlabel(axis_label)
     plt.ylabel('Accuracy (%)')
 
     for i, net_data in enumerate(data):
@@ -38,12 +46,12 @@ def plot_accuracy(data, labels, title):
     plt.show()
 
 
-def visualize_noisy_affects_accuracy():
+def visualize_adv_affects_accuracy():
      # Hyper parameters
     seed = 2
-    batch_size = 64
+    batch_size = 1
     data_name = 'MNIST'
-    noise_type = 'snp'
+    attack_name = 'FGSM'
 
     # Download MNIST data set
     test_set = get_data(data_name, False)
@@ -68,16 +76,25 @@ def visualize_noisy_affects_accuracy():
     base_conv_acc = conv_net.eval_model(test_loader)
 
     # Evaluate noise
-    nonconv_percent, nonconv_acc = evaluate_noise(nonconv_net, 'MNIST', noise_type, batch_size, seed)
-    conv_percent, conv_acc = evaluate_noise(conv_net, 'MNIST', noise_type, batch_size, seed)
+    loss_func = torch.nn.NLLLoss()
+    if attack_name == 'FGSM':
+        axis_title = 'Epsilon'
+        nonconv_x, nonconv_acc = evaluate_fgsm_attack(nonconv_net, test_loader, loss_func, seed)
+        conv_x, conv_acc = evaluate_fgsm_attack(conv_net, test_loader, loss_func, seed)
+    elif attack_name == 'OnePixel':
+        axis_title = 'Number of Pixels'
+        nonconv_x, nonconv_acc = evaluate_onepixel_attack(nonconv_net, test_loader, loss_func, seed)
+        conv_x, conv_acc = evaluate_onepixel_attack(conv_net, test_loader, loss_func, seed)
+    else:
+        raise NotImplementedError('Unknown attack type: {0}. Available attacks; [FGSM, OnePixel]'.format(attack_name))
 
     # Insert base accuracy
-    nonconv_percent.insert(0,0)
+    nonconv_x.insert(0,0)
     nonconv_acc.insert(0, base_nonconv_acc)
-    conv_percent.insert(0,0)
+    conv_x.insert(0,0)
     conv_acc.insert(0, base_conv_acc)
 
     # Plot results
     labels = ['Non-Convolutional Network', 'Convolutional Network']
-    data = [(nonconv_percent, nonconv_acc), (conv_percent, conv_acc)]
-    plot_accuracy(data, labels, 'Salt-And-Pepper Noise')
+    data = [(nonconv_x, nonconv_acc), (conv_x, conv_acc)]
+    plot_accuracy(data, labels, attack_name, axis_title)

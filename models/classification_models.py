@@ -23,6 +23,10 @@ class NonConvClassificationModel(ClassificationModel):
     def _transform_input(self, input_data: np.ndarray):
         return input_data.view(input_data.shape[0], -1)
 
+    @property
+    def num_classes(self):
+        return self.fc3.out_features
+
 
 class ConvClassificationModel(ClassificationModel):
     def __init__(self):
@@ -52,3 +56,7 @@ class ConvClassificationModel(ClassificationModel):
 
     def _transform_input(self, input_data: np.ndarray):
         return input_data
+
+    @property
+    def num_classes(self):
+        return self.fc2.out_features
