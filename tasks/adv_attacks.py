@@ -23,11 +23,11 @@ def evaluate_fgsm_attack(net, test_data, loss_func, seed_val):
     return epsilon, accuracies
 
 def evaluate_onepixel_attack(net, test_data, loss_func, seed_val):
-    num_pixels = [1, 2, 3, 4, 5, 7, 10]
+    num_pixels = [1, 3, 5, 10, 20, 40]
     accuracies = []
     for n in num_pixels:
         set_seed(seed_val)
-        attack = OnePixel(100, 400, n)
+        attack = OnePixel(100, 100, n)
         acc = attack.run(net, test_data, loss_func)
         accuracies.append(acc)
 
@@ -51,7 +51,7 @@ def visualize_adv_affects_accuracy():
     seed = 2
     batch_size = 1
     data_name = 'MNIST'
-    attack_name = 'FGSM'
+    attack_name = 'OnePixel'
 
     # Download MNIST data set
     test_set = get_data(data_name, False)

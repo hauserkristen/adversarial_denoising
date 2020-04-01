@@ -1,0 +1,1 @@
+from .torchvision_data import get_data
