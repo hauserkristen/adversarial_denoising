@@ -32,7 +32,6 @@ def train_mnist_digit_models():
 
     # Download MNIST data set
     train_set = get_data('MNIST', True)
-    test_set = get_data('MNIST', False)
 
     # MNIST digit dataset values
     input_size = np.prod(train_set.data.shape[1:])
@@ -40,7 +39,6 @@ def train_mnist_digit_models():
 
     # Use torch data loader
     train_loader = torch.utils.data.DataLoader(train_set, batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size, shuffle=True)
 
     # Train and save models
     set_seed(seed)

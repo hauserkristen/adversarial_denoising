@@ -11,10 +11,10 @@ def main():
     #visualize_noisy_affects_accuracy()
 
     # Affect of adversarial attacks
-    visualize_adv_affects_accuracy()
+    #visualize_adv_affects_accuracy()
 
     # Visualize noisy image effects on filters
-    #visualize_noisy_affects_filter()
+    visualize_noisy_affects_filter()
 
     
 if __name__ == '__main__':

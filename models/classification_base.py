@@ -13,6 +13,15 @@ class ClassificationModel(nn.Module):
         transformed_data = self._transform_input(data)
         return self(transformed_data)
 
+    def get_label(self, data: torch.Tensor):
+        # Predict
+        pred_probabilities = self.classify(data)
+        
+        # Identify max prediction probability
+        pred_label = pred_probabilities.data.max(1, keepdim=True)[1]
+
+        return pred_label
+
     def train_model(self, train_data: torch.utils.data.DataLoader, loss_func: nn.Module, optimizer: Optimizer):
         super(ClassificationModel, self).train()
         
@@ -37,11 +46,7 @@ class ClassificationModel(nn.Module):
             num_correct = 0.0
             
             for data, label in test_data:
-                # Predict
-                pred_probabilities = self.classify(data)
-                
-                # Identify max prediction probability
-                pred_label = pred_probabilities.data.max(1, keepdim=True)[1]
+                pred_label = self.get_label(data)
                 
                 # Count the number correct
                 num_correct += pred_label.eq(label.data.view_as(pred_label)).sum()
