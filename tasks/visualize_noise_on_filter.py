@@ -18,52 +18,72 @@ def set_seed(seed_val: int):
     np.random.seed(seed_val)
 
 
-def get_plots(data, conv_net, display_type, filter_index):
+def get_plots(data, conv_net):
+    results = {}
     trans_data = conv_net._transform_input(data)
 
     layer_1_labels = ['Channel: 1', 'Channel: 2', 'Channel: 3']
 
     # After first convolution
     after_conv1 = conv_net.conv1(trans_data)
-    if display_type == 'Filter' and filter_index == 1:
-        return after_conv1.detach().numpy()[0,:,:,:], layer_1_labels
+    results[(1, 'Filter')] = (after_conv1.detach().numpy()[0,:,:,:], layer_1_labels)
 
     # After first acivation
     after_act1 = F.relu(F.max_pool2d(after_conv1, 2, 2))
-    if display_type == 'Activation' and filter_index == 1:
-        return after_act1.detach().numpy()[0,:,:,:], layer_1_labels
+    results[(1, 'Activation')] = (after_act1.detach().numpy()[0,:,:,:], layer_1_labels)
 
     layer_2_labels = ['Channel: 1', 'Channel: 2', 'Channel: 3', 'Channel: 4', 'Channel: 5']
 
     # After second convolution
     after_conv2 = conv_net.conv2(after_act1)
-    if display_type == 'Filter' and filter_index == 2:
-        return after_conv2.detach().numpy()[0,:,:,:], layer_2_labels
+    results[(2, 'Filter')] = (after_conv2.detach().numpy()[0,:,:,:], layer_2_labels)
 
     # After second acivation
     after_act2 = F.relu(F.max_pool2d(after_conv2, 2, 2))
-    return after_act2.detach().numpy()[0,:,:,:], layer_2_labels
+    results[(2, 'Activation')] = (after_act2.detach().numpy()[0,:,:,:], layer_2_labels)
+
+    return results
     
 
 def visualize_noisy_affects_filter():
     # Hyper parameters
     seed = 2
     data_name = 'MNIST'
+    show_all = False
 
     # Download MNIST data set
     set_seed(seed)
     test_set = get_data(data_name, False)
     test_set_n = get_data(data_name, False, 'snp', 0.1)
 
-    # MNIST digit dataset values
-    input_size = np.prod(test_set.data.shape[1:])
-    output_size = len(test_set.classes)
-
     # Create models
     conv_net = ConvClassificationModel()
 
     # Load models
     conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
+
+    # Pre-compute values
+    raw_results = {}
+    filter_results = {}
+    for i in range(len(test_set)):
+        clean_data, original_label = test_set[i]
+        noisy_data, _ = test_set_n[i]
+
+        clean_data_torch = clean_data.view(1, *clean_data.shape).float()
+        noisy_data_torch = noisy_data.view(1, *noisy_data.shape).float()
+
+        clean_label = conv_net.get_label(clean_data_torch).detach().numpy()[0][0]
+        noisy_label = conv_net.get_label(noisy_data_torch).detach().numpy()[0][0]
+
+        clean_p_dist = np.round(np.exp(conv_net.classify(clean_data_torch).detach().numpy()[0]), decimals=2)
+        noisy_p_dist = np.round(np.exp(conv_net.classify(noisy_data_torch).detach().numpy()[0]), decimals=2)
+
+        clean_data_np = np.flipud(clean_data.detach().numpy()[0,:,:])
+        noisy_data_np = np.flipud(noisy_data.detach().numpy()[0,:,:])
+
+        if show_all or (original_label == clean_label and original_label != noisy_label):
+            raw_results[i] = (clean_data_np, noisy_data_np, original_label, clean_label, noisy_label, clean_p_dist, noisy_p_dist)
+            filter_results[i] = (get_plots(clean_data_torch, conv_net), get_plots(noisy_data_torch, conv_net))
 
     # Create dash app
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -75,8 +95,8 @@ def visualize_noisy_affects_filter():
                 html.Label('Test Set Image Index:'),
                 dcc.Dropdown(
                     id='data_set-index',
-                    options=[{'label': i, 'value': i} for i in range(len(test_set))],
-                    value=0
+                    options=[{'label': i, 'value': i} for i in raw_results.keys()],
+                    value=list(raw_results.keys())[0]
                 )
             ],
             style={'width': '33%', 'display': 'inline-block', 'vertical-align': 'top'}),
@@ -122,14 +142,10 @@ def visualize_noisy_affects_filter():
     Input('display-type', 'value'),
     Input('filter-index', 'value')])
     def update_graph(selected_index, display_type, filter_index):
-        clean_data, clean_label = test_set[selected_index]
-        noisy_data, noisy_label = test_set_n[selected_index]
+        clean_plot_set, noisy_plot_set = filter_results[selected_index]
 
-        clean_data = clean_data.view(1,*clean_data.size()).float()
-        noisy_data = noisy_data.view(1,*noisy_data.size()).float()
-
-        clean_plots, labels = get_plots(clean_data, conv_net, display_type, filter_index)
-        noisy_plots, _ = get_plots(noisy_data, conv_net, display_type, filter_index)
+        clean_plots, labels = clean_plot_set[(filter_index, display_type)]
+        noisy_plots, _ = noisy_plot_set[(filter_index, display_type)]
 
         num_rows = clean_plots.shape[0]
         fig = make_subplots(
@@ -200,17 +216,7 @@ def visualize_noisy_affects_filter():
     Output('noisy-label', 'children')],
     [Input('data_set-index', 'value')])
     def update_graph(selected_index):
-        clean_data, original_label = test_set[selected_index]
-        noisy_data, _ = test_set_n[selected_index]
-
-        clean_data_torch = clean_data.view(1, *clean_data.shape)
-        noidy_data_torch = noisy_data.view(1, *noisy_data.shape)
-
-        clean_label = conv_net.get_label(clean_data_torch).detach().numpy()[0][0]
-        noisy_label = conv_net.get_label(noidy_data_torch).detach().numpy()[0][0]
-
-        clean_data_np = np.flipud(clean_data.detach().numpy()[0,:,:])
-        noisy_data_np = np.flipud(noisy_data.detach().numpy()[0,:,:])
+        clean_data_np, noisy_data_np, original_label, clean_label, noisy_label, clean_p_dist, noisy_p_dist = raw_results[selected_index]
 
         fig = make_subplots(
             rows=1, 
@@ -253,6 +259,9 @@ def visualize_noisy_affects_filter():
             }
         )
 
-        return fig, 'Original Label: {}'.format(original_label), 'Clean Label: {}'.format(clean_label), 'Noisy Label: {}'.format(noisy_label)
+        clean_desc = 'Clean Label: {}, Clean Label Probabilities: {}'.format(clean_label, clean_p_dist)
+        noisy_desc = 'Noisy Label: {}, Noisy Label Probabilities: {}'.format(noisy_label, noisy_p_dist)
+
+        return fig, 'Original Label: {}'.format(original_label), clean_desc, noisy_desc
 
     app.run_server(debug=True)
