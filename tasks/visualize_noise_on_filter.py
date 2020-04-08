@@ -46,15 +46,16 @@ def get_plots(data, conv_net):
     
 
 def visualize_noisy_affects_filter():
-    # Hyper parameters
+    # Parameters
     seed = 2
     data_name = 'MNIST'
     show_all = False
+    noise_type = 'snp'
 
     # Download MNIST data set
     set_seed(seed)
     test_set = get_data(data_name, False)
-    test_set_n = get_data(data_name, False, 'snp', 0.1)
+    test_set_n = get_data(data_name, False, noise_type, 0.1)
 
     # Create models
     conv_net = ConvClassificationModel()
