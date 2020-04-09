@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import plotly.graph_objects as go
 
-from models import ConvClassificationModel, NonConvClassificationModel
+from models import ConvClassificationModel
 from data import get_data
 from adv_attacks import FGSM, OnePixel
 
@@ -45,7 +45,7 @@ def evaluate_onepixel_attack(net, test_data, loss_func, seed_val, rerun=False):
 
     return num_pixels, accuracies   
 
-def plot_accuracy(data, labels, title, axis_label):
+def plot_accuracy(data, title, axis_label):
     fig = go.Figure()
     
     fig.update_layout(
@@ -66,8 +66,7 @@ def plot_accuracy(data, labels, title, axis_label):
             go.Scatter(
                 x=net_data[0],
                 y=net_data[1],
-                mode='lines',
-                name=labels[i]
+                mode='lines'
             )
         )
 
@@ -80,10 +79,6 @@ def plot_accuracy(data, labels, title, axis_label):
         },
         yaxis={
             'range': [-0.05,1.05]
-        },
-        legend={
-            'x': 0.05*x_min,
-            'y': 0.01
         }
     )
 
@@ -100,21 +95,13 @@ def visualize_adv_affects_accuracy():
     test_set = get_data(data_name, False)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size, shuffle=True)
 
-    # MNIST digit dataset values
-    input_size = np.prod(test_set.data.shape[1:])
-    output_size = len(test_set.classes)
-
-    # Create models
-    nonconv_net = NonConvClassificationModel(input_size, output_size)
+    # Create model
     conv_net = ConvClassificationModel()
 
-    # Load models
-    nonconv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_nonconv.model'))
+    # Load model
     conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
 
     # Get base accuracy
-    set_seed(seed)
-    base_nonconv_acc = nonconv_net.eval_model(test_loader)
     set_seed(seed)
     base_conv_acc = conv_net.eval_model(test_loader)
 
@@ -122,23 +109,17 @@ def visualize_adv_affects_accuracy():
     loss_func = torch.nn.NLLLoss()
     if attack_name == 'FGSM':
         axis_title = 'Epsilon'
-        nonconv_x, nonconv_acc = evaluate_fgsm_attack(nonconv_net, test_loader, loss_func, seed)
         conv_x, conv_acc = evaluate_fgsm_attack(conv_net, test_loader, loss_func, seed)
     elif attack_name == 'OnePixel':
         axis_title = 'Number of Pixels'
-        nonconv_x, nonconv_acc = evaluate_onepixel_attack(nonconv_net, test_loader, loss_func, seed)
         conv_x, conv_acc = evaluate_onepixel_attack(conv_net, test_loader, loss_func, seed)
     else:
         raise NotImplementedError('Unknown attack type: {0}. Available attacks; [FGSM, OnePixel]'.format(attack_name))
 
     # Insert base accuracy
-    nonconv_x.insert(0,0)
-    nonconv_acc.insert(0, base_nonconv_acc)
     conv_x.insert(0,0)
     conv_acc.insert(0, base_conv_acc)
 
     # Plot results
-    labels = ['Non-Convolutional Network', 'Convolutional Network']
-    data = [(nonconv_x, nonconv_acc), (conv_x, conv_acc)]
-    plot_accuracy(data, labels, attack_name, axis_title)
-    # Zoom 200% to save file
+    data = [(conv_x, conv_acc)]
+    plot_accuracy(data, attack_name, axis_title)

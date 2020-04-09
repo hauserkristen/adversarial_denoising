@@ -50,7 +50,7 @@ def visualize_noisy_affects_filter():
     seed = 2
     data_name = 'MNIST'
     show_all = False
-    noise_type = 'snp'
+    noise_type = 'gaussian'
 
     # Download MNIST data set
     set_seed(seed)
@@ -106,7 +106,7 @@ def visualize_noisy_affects_filter():
                 dcc.Dropdown(
                     id='filter-index',
                     options=[{'label': i, 'value': i} for i in  [1,2]],
-                    value=1
+                    value=2
                 ),
             ],
             style={'width': '33%', 'display': 'inline-block', 'vertical-align': 'top'}),

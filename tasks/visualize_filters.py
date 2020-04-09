@@ -3,7 +3,7 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-from models import ConvClassificationModel, NonConvClassificationModel
+from models import ConvClassificationModel
 from data import get_data
 
 def plot_filter_layer(filter_layers):
@@ -50,23 +50,11 @@ def plot_filter_layer(filter_layers):
         input()
 
 def visualize_filters():
-    # Download MNIST data set
-    train_set = get_data('MNIST', True)
-
-    # MNIST digit dataset values
-    input_size = np.prod(train_set.data.shape[1:])
-    output_size = len(train_set.classes)
-
     # Create models
-    nonconv_net = NonConvClassificationModel(input_size, output_size)
     conv_net = ConvClassificationModel()
 
-    # Load models
-    nonconv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_nonconv.model'))
+    # Load model
     conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
-
-    # Plot non-convolutional weights
-    #TODO
 
     # Plot convolutional filters
     filters = [

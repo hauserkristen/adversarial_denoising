@@ -25,7 +25,7 @@ class AddNoise(object):
 
 
 class AddGaussianNoise(AddNoise):
-    def __init__(self, percent_noise: float, mean: float = 0.0, std: float = 1.0):
+    def __init__(self, percent_noise: float, mean: float = 0.5, std: float = 0.2):
         super(AddGaussianNoise, self).__init__(percent_noise)
         self.std = std
         self.mean = mean
@@ -38,14 +38,15 @@ class AddGaussianNoise(AddNoise):
         index_samples = self._get_unique_indicies(tensor.size())
 
         # Create mask
-        mask = torch.zeros_like(tensor)
+        result = tensor.clone()
         for multi_index in index_samples:
-            mask[tuple(multi_index)] = 1.0
+            result[tuple(multi_index)] = gaussian_samples[tuple(multi_index)]
         
-        # Create gaussian mask
-        gaussian_mask = torch.mul(mask, gaussian_samples)
+        # Clamp
+        result[result < 0.0] = 0.0
+        result[result > 1.0] = 1.0
 
-        return tensor + gaussian_mask
+        return result
     
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1}) with p={2}'.format(self.mean, self.std, self.p_noise)
@@ -57,13 +58,14 @@ class AddSaltAndPepperNoise(AddNoise):
         index_samples = self._get_unique_indicies(tensor.size())
 
         # Alter tensor
+        result = tensor.clone()
         for multi_index in index_samples:
             if np.random.choice(2) == 0:
-                tensor[tuple(multi_index)] = 0.05
+                result[tuple(multi_index)] = 0.05
             else:
-                tensor[tuple(multi_index)] = 0.95
+                result[tuple(multi_index)] = 0.95
 
-        return tensor
+        return result
 
     def __repr__(self):
         return self.__class__.__name__ + ' with p={0}'.format(self.p_noise)
