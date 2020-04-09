@@ -11,46 +11,14 @@ import plotly.graph_objects as go
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
-
-
-def set_seed(seed_val: int):
-    torch.manual_seed(seed_val)
-    np.random.seed(seed_val)
-
-
-def get_plots(data, conv_net):
-    results = {}
-    trans_data = conv_net._transform_input(data)
-
-    layer_1_labels = ['Channel: 1', 'Channel: 2', 'Channel: 3']
-
-    # After first convolution
-    after_conv1 = conv_net.conv1(trans_data)
-    results[(1, 'Filter')] = (after_conv1.detach().numpy()[0,:,:,:], layer_1_labels)
-
-    # After first acivation
-    after_act1 = F.relu(F.max_pool2d(after_conv1, 2, 2))
-    results[(1, 'Activation')] = (after_act1.detach().numpy()[0,:,:,:], layer_1_labels)
-
-    layer_2_labels = ['Channel: 1', 'Channel: 2', 'Channel: 3', 'Channel: 4', 'Channel: 5']
-
-    # After second convolution
-    after_conv2 = conv_net.conv2(after_act1)
-    results[(2, 'Filter')] = (after_conv2.detach().numpy()[0,:,:,:], layer_2_labels)
-
-    # After second acivation
-    after_act2 = F.relu(F.max_pool2d(after_conv2, 2, 2))
-    results[(2, 'Activation')] = (after_act2.detach().numpy()[0,:,:,:], layer_2_labels)
-
-    return results
-    
+from .common import set_seed, get_plots
 
 def visualize_noisy_affects_filter():
     # Parameters
     seed = 2
     data_name = 'MNIST'
     show_all = False
-    noise_type = 'gaussian'
+    noise_type = 'snp'
 
     # Download MNIST data set
     set_seed(seed)
@@ -82,7 +50,9 @@ def visualize_noisy_affects_filter():
         clean_data_np = np.flipud(clean_data.detach().numpy()[0,:,:])
         noisy_data_np = np.flipud(noisy_data.detach().numpy()[0,:,:])
 
-        if show_all or (original_label == clean_label and original_label != noisy_label):
+        label_mismatch = original_label == clean_label and original_label != noisy_label
+
+        if show_all or label_mismatch:
             raw_results[i] = (clean_data_np, noisy_data_np, original_label, clean_label, noisy_label, clean_p_dist, noisy_p_dist)
             filter_results[i] = (get_plots(clean_data_torch, conv_net), get_plots(noisy_data_torch, conv_net))
 
@@ -152,7 +122,7 @@ def visualize_noisy_affects_filter():
         fig = make_subplots(
             rows=num_rows, 
             cols=3,
-            subplot_titles=['{} on {}'.format(t, l) for l in labels for t in ['Clean Data', 'Noisy Data', 'Difference']])
+            subplot_titles=['{} on {}'.format(t, l) for l in labels for t in ['Clean Image', 'Noisy Image', 'Difference']])
 
         for i in range(num_rows):
             clean_plot = np.flipud(clean_plots[i,:,:])

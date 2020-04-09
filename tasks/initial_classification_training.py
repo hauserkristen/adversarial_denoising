@@ -5,10 +5,7 @@ import torch.optim as optim
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
-
-def set_seed(seed_val: int):
-    torch.manual_seed(seed_val)
-    np.random.seed(seed_val)
+from .common import set_seed
 
 def run_training(network: nn.Module, lr: float, m: float, n_epochs: int, train_data, test_data):
     # Define loss and optimizer

@@ -4,10 +4,7 @@ import plotly.graph_objects as go
 
 from models import ConvClassificationModel
 from data import get_data
-
-def set_seed(seed_val: int):
-    torch.manual_seed(seed_val)
-    np.random.seed(seed_val)
+from .common import set_seed
 
 def evaluate_noise(net, data_name, noise_name, b_size, seed_val, rerun=False):
     percent_noise = [0.1, 0.2, 0.3, 0.4, 0.5]
