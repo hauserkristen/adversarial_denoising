@@ -23,26 +23,30 @@ def search_for_filter_match():
     seed = 2
     data_name = 'MNIST'
     show_all = False
-    noise_type = 'snp'
-    noisy_image_index = 175
-
-    # Download MNIST data set
-    set_seed(seed)
-    train_set = get_data(data_name, True)
-    test_set_n = get_data(data_name, False, noise_type, 0.1)
-
+    noise_type = 'gaussian'
+    noisy_image_index = 1444
+    min_sim_score = 0.5
+    
     # Create models
+    set_seed(seed)
     conv_net = ConvClassificationModel()
 
     # Load models
     conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
 
+    # Read noisy image file
+    filename = 'data\\{}\\noisy_data_np\\{}_{}.npy'.format(data_name, noise_type, noisy_image_index)
+    noisy_data = np.flipud(np.load(filename)).copy()
+
     # Get second feature representation for index
-    noisy_data, original_label = test_set_n[noisy_image_index]
-    noisy_data_torch = noisy_data.view(1, *noisy_data.shape).float()
+    noisy_data_torch = torch.from_numpy(noisy_data)
+    noisy_data_torch = noisy_data_torch.view(1, 1, *noisy_data_torch.shape).float()
     noisy_label = conv_net.get_label(noisy_data_torch).detach().numpy()[0][0]
     noisy_second_feature_set = get_plots(noisy_data_torch, conv_net)[(2, 'Filter')][0]
 
+    # Get training data set
+    train_set = get_data(data_name, True)
+    
     # Search for similar clean feature set
     similar_feature_sets = []
     max_sim = -float('inf')
@@ -61,7 +65,7 @@ def search_for_filter_match():
                 simularity += calculate_similarity(clean_second_feature_set[j,:,:], noisy_second_feature_set[j,:,:])
             simularity /= float(num_features)
 
-            if simularity > 0.7:
+            if simularity > min_sim_score:
                 data = (simularity, i, clean_data, clean_second_feature_set)
                 similar_feature_sets.append(data)
             if simularity > max_sim:
@@ -158,7 +162,7 @@ def search_for_filter_match():
 
         raw_fig.add_trace(
             go.Heatmap(
-                z=np.flipud(noisy_data.detach().numpy()[0,:,:]),
+                z=np.flipud(noisy_data),
                 type='heatmap', 
                 coloraxis='coloraxis',
                 showscale=False
@@ -192,4 +196,4 @@ def search_for_filter_match():
 
         return filter_fig, raw_fig, 'Similarity Score: {}'.format(sim_score)
 
-    app.run_server(debug=True)
+    app.run_server(port=8052, debug=True)

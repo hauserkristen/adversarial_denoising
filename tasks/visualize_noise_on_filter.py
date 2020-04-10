@@ -18,13 +18,19 @@ def visualize_noisy_affects_filter():
     seed = 2
     data_name = 'MNIST'
     show_all = False
-    noise_type = 'snp'
+    noise_type = 'gaussian'
+
+    # Save indices
+    if noise_type == 'snp':
+        save_indices = [118, 175]
+    else:
+        save_indices = [333, 1444]
 
     # Download MNIST data set
     set_seed(seed)
-    test_set = get_data(data_name, False)
     test_set_n = get_data(data_name, False, noise_type, 0.1)
-
+    test_set = get_data(data_name, False)
+    
     # Create models
     conv_net = ConvClassificationModel()
 
@@ -36,18 +42,15 @@ def visualize_noisy_affects_filter():
     filter_results = {}
     for i in range(len(test_set)):
         clean_data, original_label = test_set[i]
-        noisy_data, _ = test_set_n[i]
-
         clean_data_torch = clean_data.view(1, *clean_data.shape).float()
-        noisy_data_torch = noisy_data.view(1, *noisy_data.shape).float()
-
         clean_label = conv_net.get_label(clean_data_torch).detach().numpy()[0][0]
-        noisy_label = conv_net.get_label(noisy_data_torch).detach().numpy()[0][0]
-
         clean_p_dist = np.round(np.exp(conv_net.classify(clean_data_torch).detach().numpy()[0]), decimals=2)
-        noisy_p_dist = np.round(np.exp(conv_net.classify(noisy_data_torch).detach().numpy()[0]), decimals=2)
-
         clean_data_np = np.flipud(clean_data.detach().numpy()[0,:,:])
+
+        noisy_data, _ = test_set_n[i]
+        noisy_data_torch = noisy_data.view(1, *noisy_data.shape).float()
+        noisy_label = conv_net.get_label(noisy_data_torch).detach().numpy()[0][0]
+        noisy_p_dist = np.round(np.exp(conv_net.classify(noisy_data_torch).detach().numpy()[0]), decimals=2)
         noisy_data_np = np.flipud(noisy_data.detach().numpy()[0,:,:])
 
         label_mismatch = original_label == clean_label and original_label != noisy_label
@@ -55,6 +58,11 @@ def visualize_noisy_affects_filter():
         if show_all or label_mismatch:
             raw_results[i] = (clean_data_np, noisy_data_np, original_label, clean_label, noisy_label, clean_p_dist, noisy_p_dist)
             filter_results[i] = (get_plots(clean_data_torch, conv_net), get_plots(noisy_data_torch, conv_net))
+
+            if i in save_indices:
+                # Dump output
+                filename = 'data\\{}\\noisy_data_np\\{}_{}'.format(data_name, noise_type, i)
+                np.save(filename, noisy_data_np)
 
     # Create dash app
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -235,4 +243,4 @@ def visualize_noisy_affects_filter():
 
         return fig, 'Original Label: {}'.format(original_label), clean_desc, noisy_desc
 
-    app.run_server(debug=True)
+    app.run_server(port=8051, debug=True)

@@ -14,10 +14,10 @@ def main():
     #visualize_adv_affects_accuracy()
 
     # Visualize noisy image effects on filters
-    visualize_noisy_affects_filter()
+    #visualize_noisy_affects_filter()
 
     # Search for structural similar features
-    #search_for_filter_match()
+    search_for_filter_match()
 
     
 if __name__ == '__main__':
