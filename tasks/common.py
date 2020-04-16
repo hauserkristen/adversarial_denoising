@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import torch.nn.functional as F
+from skimage.metrics import structural_similarity
 
 def set_seed(seed_val: int):
     torch.manual_seed(seed_val)
@@ -31,3 +32,8 @@ def get_plots(data, conv_net):
     results[(2, 'Activation')] = (after_act2.detach().numpy()[0,:,:,:], layer_2_labels)
 
     return results
+
+def calculate_similarity(clean_image, noisy_image):
+    #Structural similarity (SSIM) index
+    score = structural_similarity(noisy_image, clean_image, data_range=(noisy_image.max() - noisy_image.min()))
+    return score

@@ -7,10 +7,46 @@ class AdversarialAttack(object):
     def attack(self, data: torch.Tensor, data_gradient):
         raise NotImplementedError('Must implement attack.')
 
+    def get_modified_data(self, net: torch.nn.Module, test_data: torch.utils.data.DataLoader, loss_func):
+        adv_examples = []
+        clean_examples = []
+        clean_labels = []
+
+        # Loop over all examples in test set
+        for data, label in test_data:
+            torch_label = torch.Tensor([label]).long()
+            torch_data = data.view(1, *data.shape).float()
+
+            # Data grad is required for most attacks (including FGSM)
+            torch_data.requires_grad = True
+
+            # Predict
+            pred_probabilities = net.classify(torch_data)
+            pred_label = pred_probabilities.data.max(1, keepdim=True)[1]
+
+            # Check for initial accuracy
+            if pred_label.item() != torch_label.item():
+                continue
+
+            # Calculate loss (assumes probatility and index format)
+            net.zero_grad()
+            loss = loss_func(pred_probabilities, torch_label)
+            loss.backward()
+
+            # Collect data gradient
+            data_grad = torch_data.grad.data
+
+            # Call attack
+            perturbed_data = self.attack(net, torch_data, label, data_grad)
+            adv_examples.append(perturbed_data)
+            clean_examples.append(torch_data)
+            clean_labels.append(label)
+
+        return adv_examples, clean_examples, clean_labels
+
     def run(self, net: torch.nn.Module, test_data: torch.utils.data.DataLoader, loss_func, visualize: bool = False):
         # Accuracy counter
         correct = 0
-        adv_examples = []
 
         # Loop over all examples in test set
         for data, label in test_data:
