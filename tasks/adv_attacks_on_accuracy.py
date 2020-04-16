@@ -34,10 +34,10 @@ def evaluate_onepixel_attack(net, test_data, loss_func, seed_val, rerun=False):
             acc = attack.run(net, test_data, loss_func)
             accuracies.append(acc)
     else:
-        # TODO: Need first value for both and last value for conv
         if isinstance(net, ConvClassificationModel):
-            accuracies = [0.0, 0.9518, 0.9449, 0.9323, 0.9043, 0.0]
+            accuracies = [0.9598, 0.9518, 0.9449, 0.9323, 0.9043, 0.8496]
         else:
+            # TODO: Need first value for non-conv but was abandoned
             accuracies = [0.0, 0.8965, 0.8871, 0.8653, 0.8274, 0.7543]
 
     return num_pixels, accuracies   
