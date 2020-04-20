@@ -5,7 +5,7 @@ import torch.optim as optim
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
-from .common import set_seed
+from tasks import set_seed
 
 def run_training(network: nn.Module, lr: float, m: float, n_epochs: int, train_data, test_data):
     # Define loss and optimizer

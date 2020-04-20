@@ -1,6 +1,46 @@
 import torch
 import numpy as np
 
+# Noise types for RGB CIFAR10 data set
+
+class ToRGBTensor(object):
+    """
+    Default ToTensor transform scale input to [0,1], this does not
+    """
+    def __call__(self, x):
+        # Convert from PIL image to numpy
+        result = np.asarray(x)
+
+        # Move axis to enforce same style as previous input
+        result = np.moveaxis(result, -1, 0)
+
+        # Convert from numpy to torch tensor
+        result = torch.from_numpy(result)
+        return result
+
+class AddGaussianNoise(object):
+    def __init__(self, mean: float = 0.0, std: float = 50.0):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        # Sample gaussian
+        gaussian_samples = torch.randn(tensor.size()) * self.std + self.mean
+
+        # Create mask
+        result = tensor.clone().float()
+        result += gaussian_samples
+        
+        # Clamp
+        result[result < 0] = 0
+        result[result > 255] = 255
+
+        return result.type(torch.uint8)
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1}) with p={2}'.format(self.mean, self.std, self.p_noise)
+
+# Noise types for the grayscale MNIST dataset
 class AddNoise(object):
     def __init__(self, percent_noise: float):
         self.p_noise = percent_noise
@@ -23,10 +63,9 @@ class AddNoise(object):
 
         return index_samples
 
-
-class AddGaussianNoise(AddNoise):
+class AddGaussianGrayScaleNoise(AddNoise):
     def __init__(self, percent_noise: float, mean: float = 0.5, std: float = 0.2):
-        super(AddGaussianNoise, self).__init__(percent_noise)
+        super(AddGaussianGrayScaleNoise, self).__init__(percent_noise)
         self.std = std
         self.mean = mean
         
@@ -51,7 +90,6 @@ class AddGaussianNoise(AddNoise):
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1}) with p={2}'.format(self.mean, self.std, self.p_noise)
 
-
 class AddSaltAndPepperNoise(AddNoise):
     def __call__(self, tensor):
         # Get indices to alter
@@ -72,9 +110,11 @@ class AddSaltAndPepperNoise(AddNoise):
 
 
 def get_noise(noise_name: str, percent_noise: float):
-    if noise_name == 'gaussian':
-        return AddGaussianNoise(percent_noise)
+    if noise_name == 'gaussian_gray':
+        return AddGaussianGrayScaleNoise(percent_noise)
+    elif noise_name == 'gaussian':
+        return AddGaussianNoise()
     elif noise_name == 'snp':
         return AddSaltAndPepperNoise(percent_noise)
     else:
-        raise NotImplementedError('Unknown noise type: {0}. Available noise types: [gaussian, snp]'.format(noise_name))
+        raise NotImplementedError('Unknown noise type: {0}. Available noise types: [gaussian_gray, gaussian, snp]'.format(noise_name))

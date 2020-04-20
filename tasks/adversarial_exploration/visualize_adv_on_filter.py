@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
 from adv_attacks import FGSM
-from .common import set_seed, get_plots
+from tasks import set_seed, get_plots
 
 def visualize_adv_affects_filter():
     # Parameters

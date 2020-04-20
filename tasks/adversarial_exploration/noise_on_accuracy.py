@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 from models import ConvClassificationModel
 from data import get_data
-from .common import set_seed
+from tasks import set_seed
 
 def evaluate_noise(net, data_name, noise_name, b_size, seed_val, rerun=False):
     percent_noise = [0.1, 0.2, 0.3, 0.4, 0.5]
@@ -85,7 +85,7 @@ def visualize_noisy_affects_accuracy():
     base_conv_acc = conv_net.eval_model(test_loader)
 
     data = []
-    for noise_type in ['snp', 'gaussian']:
+    for noise_type in ['snp', 'gaussian_gray']:
         # Evaluate noise
         conv_percent, conv_acc = evaluate_noise(conv_net, 'MNIST', noise_type, batch_size, seed)
 

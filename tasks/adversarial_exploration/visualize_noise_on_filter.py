@@ -11,14 +11,14 @@ import plotly.graph_objects as go
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
-from .common import set_seed, get_plots
+from tasks import set_seed, get_plots
 
 def visualize_noisy_affects_filter():
     # Parameters
     seed = 2
     data_name = 'MNIST'
     show_all = False
-    noise_type = 'gaussian'
+    noise_type = 'gaussian_gray'
 
     # Save indices
     if noise_type == 'snp':

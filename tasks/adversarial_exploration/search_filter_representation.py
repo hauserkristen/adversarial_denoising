@@ -10,13 +10,14 @@ import plotly.graph_objects as go
 
 from models import ConvClassificationModel, NonConvClassificationModel
 from data import get_data
-from .common import set_seed, get_plots, calculate_similarity
+from tasks import set_seed, get_plots
 
-def search_for_adv_filter_match():
+def search_for_filter_match():
     # Parameters
     seed = 2
     data_name = 'MNIST'
-    adv_image_index = 20
+    noise_type = 'snp'
+    noisy_image_index = 118
     
     # Create models
     set_seed(seed)
@@ -25,9 +26,10 @@ def search_for_adv_filter_match():
     # Load models
     conv_net.load(torch.load('models\\pre_trained_models\\mnist_digit_conv.model'))
 
-    # Read noisy image file
-    filename = 'data\\{}\\adv_data_np\\{}_{}_clean.npy'.format(data_name, 'FGSM', adv_image_index)
-    clean_data = np.flipud(np.load(filename)).copy()
+    # Get test data set
+    test_set = get_data(data_name, False)
+    clean_data, original_label = test_set[noisy_image_index]
+    clean_data = clean_data.detach().numpy()[0,:,:]
 
     # Get second feature representation for index
     clean_data_torch = torch.from_numpy(clean_data)
@@ -36,7 +38,7 @@ def search_for_adv_filter_match():
     clean_second_feature_set = get_plots(clean_data_torch, conv_net)[(2, 'Filter')][0]
 
     # Read noisy image file
-    filename = 'data\\{}\\adv_data_np\\{}_{}_adv.npy'.format(data_name, 'FGSM', adv_image_index)
+    filename = 'data\\{}\\noisy_data_np\\{}_{}.npy'.format(data_name, noise_type, noisy_image_index)
     noisy_data = np.flipud(np.load(filename)).copy()
    
     # Get second feature representation for index
@@ -87,7 +89,7 @@ def search_for_adv_filter_match():
     filter_fig = make_subplots(
         rows=num_features, 
         cols=4,
-        subplot_titles=['Similar Clean<br>Class Training<br>Image', 'Clean Image', 'Adversarial Image', 'Similar Adversarial<br>Class Training<br>Image'] + ['']*((num_features-1)*4))
+        subplot_titles=['Similar Clean<br>Class Training<br>Image', 'Clean Image', 'Noisy Image', 'Similar Noisy<br>Class Training<br>Image'] + ['']*((num_features-1)*4))
 
     for i in range(num_features):
         noisy_plot = np.flipud(noisy_second_feature_set[i,:,:])
@@ -162,7 +164,7 @@ def search_for_adv_filter_match():
     raw_fig = make_subplots(
         rows=2, 
         cols=2,
-        subplot_titles=['Clean Image', 'Adversarial Image', 'Similar Clean<br>Class Training<br>Image', 'Similar Adversarial<br>Class Training<br>Image'])
+        subplot_titles=['Clean Image', 'Noisy Image', 'Similar Clean<br>Class Training<br>Image', 'Similar Noisy<br>Class Training<br>Image'])
 
     raw_fig.add_trace(
         go.Heatmap(

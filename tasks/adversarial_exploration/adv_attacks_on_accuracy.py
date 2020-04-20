@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from models import ConvClassificationModel
 from data import get_data
 from adv_attacks import FGSM, OnePixel
-from .common import set_seed
+from tasks import set_seed
 
 def evaluate_fgsm_attack(net, test_data, loss_func, seed_val, rerun=False):
     epsilon = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]

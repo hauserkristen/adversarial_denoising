@@ -130,3 +130,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+data/CIFAR10/train/cifar-10-python.tar.gz
+data/CIFAR10/train/cifar-10-batches-py/batches.meta
+data/CIFAR10/train/cifar-10-batches-py/test_batch
+data/CIFAR10/train/cifar-10-batches-py/readme.html
+data/CIFAR10/train/cifar-10-batches-py/data_batch_5
+data/CIFAR10/train/cifar-10-batches-py/data_batch_4
+data/CIFAR10/train/cifar-10-batches-py/data_batch_3
+data/CIFAR10/train/cifar-10-batches-py/data_batch_2
+data/CIFAR10/train/cifar-10-batches-py/data_batch_1
