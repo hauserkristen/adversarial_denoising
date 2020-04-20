@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from data_loader import load_dataset
 from noise2noise import Noise2Noise
 from argparse import ArgumentParser
 
