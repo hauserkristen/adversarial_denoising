@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from bisect import bisect
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from torch.nn import MSELoss
@@ -45,7 +46,7 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
         cols=4,
         horizontal_spacing=0.1,
         vertical_spacing=0.1,
-        subplot_titles=['Clean Image', 'Noise', 'Noisy Image', 'Denoised Image', '', 'Adversarial Noise', 'Adversarial Noisy Image', 'Denoised Adversarial Image'])
+        subplot_titles=['Clean Image', 'Noise', 'Noisy Image', 'Denoised Image', 'Noise Distribution', 'Adversarial Noise', 'Adversarial Noisy Image', 'Denoised Adversarial Image'])
 
     plots = [
         orig_np, noise_np, noisy_np, denoised_np,
@@ -53,24 +54,65 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
     ]
 
     for i, p in enumerate(plots):
-        if p is None:
-            continue
-
         row = (i // 4) + 1
         col = (i % 4) + 1
 
-        fig.add_trace(
-            go.Image(
-                z=p,
-                colormodel='rgb',
-                zmax=[255,255,255,255],
-                zmin=[0,0,0,0]
-            ),
-            row=row,
-            col=col
-        )
-        fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
-        fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
+        if p is None:
+            # Create bins
+            bin_edges = np.arange(-255,260,5)
+            bins = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+            # Create histogram of noise distribution
+            guassian_dist = np.zeros_like(bins)
+            adversarial_dist = np.zeros_like(bins)
+            for j in range(noise_np.shape[0]):
+                for k in range(noise_np.shape[1]):
+                    for l in range(noise_np.shape[2]):
+                        gausian_val = noise_np[j,k,l]
+                        adv_val = adv_noise_np[j,k,l]
+
+                        gaussian_bin = bisect(bin_edges[1:], gausian_val)
+                        if gaussian_bin >= bins.shape[0]:
+                            gaussian_bin = bins.shape[0]-1
+                        adv_bin = bisect(bin_edges[1:], adv_val)
+                        if adv_bin >= bins.shape[0]:
+                            adv_bin = bins.shape[0]-1
+
+                        guassian_dist[gaussian_bin] += 1
+                        adversarial_dist[adv_bin] += 1
+
+            # Add traces
+            fig.add_trace(
+                go.Bar(
+                    x=bins,
+                    y=guassian_dist,
+                    name='Gaussian'
+                ),
+                row=row,
+                col=col
+            )
+            fig.add_trace(
+                go.Bar(
+                    x=bins,
+                    y=adversarial_dist,
+                    name='Adversarial'
+                ),
+                row=row,
+                col=col
+            )
+        else:
+            fig.add_trace(
+                go.Image(
+                    z=p,
+                    colormodel='rgb',
+                    zmax=[255,255,255,255],
+                    zmin=[0,0,0,0]
+                ),
+                row=row,
+                col=col
+            )
+            fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
+            fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
 
     fig.show()
 
