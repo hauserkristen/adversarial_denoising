@@ -61,7 +61,10 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
 
         fig.add_trace(
             go.Image(
-                z=p
+                z=p,
+                colormodel='rgb',
+                zmax=[255,255,255,255],
+                zmin=[0,0,0,0]
             ),
             row=row,
             col=col

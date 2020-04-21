@@ -17,7 +17,7 @@ def _check_condition(output, target):
 
     return condition
 
-def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.07):
+def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.5):
     # Creat adversarial image to be optimized
     adv_noise = torch.zeros_like(clean_image)
     adv_noise.requires_grad = True
@@ -47,11 +47,9 @@ def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.07):
         # Finding r_m
         adv_direction = adv_log - clean_log
         r_m = torch.mul(adv_direction, condition)
-        r_m.requires_grad_()
 
         # Summation
         r_m_sum = r_m.sum()
-        r_m_sum.requires_grad_()
 
         # Finding gradient with respect to image
         r_m_grad = torch.autograd.grad(r_m_sum, adv_image, retain_graph=True)[0]
@@ -64,10 +62,10 @@ def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.07):
             break
 
         #Calculating final value of r_m
-        r_m_norm = gamma * r_m_grad
+        r_m_norm = (gamma / r_m_grad_mag) * r_m_grad
 
         # Updating the noise
-        adv_noise = adv_noise + r_m_norm
+        adv_noise = adv_noise + torch.mul(r_m_norm, 255)
         adv_noise = torch.clamp(adv_noise, -255, 255)
 
     return adv_noise
