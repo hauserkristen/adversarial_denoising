@@ -2,62 +2,67 @@ import torch
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from torch.nn import MSELoss
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torch.optim import Adam
 
 from data import get_data
 from denoising import UNet
 from tasks import set_seed
+from .DAG import DAG
 
-def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor):
-    orig_np = original_image.detach().numpy()
+def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
+    orig_np = original_image.detach().numpy().squeeze(0)
     noisy_np = noisy_image.detach().numpy().squeeze(0)
     denoised_np = denoised_image.detach().numpy().squeeze(0)
+    adv_image_np = adv_image.detach().numpy().squeeze(0)
+    adv_denoised_np = denoised_adv_image.detach().numpy().squeeze(0)
 
     # Flip axes back
     orig_np = np.moveaxis(orig_np, 0, -1)
     noisy_np = np.moveaxis(noisy_np, 0, -1)
     denoised_np = np.moveaxis(denoised_np, 0, -1)
+    adv_image_np = np.moveaxis(adv_image_np, 0, -1)
+    adv_denoised_np = np.moveaxis(adv_denoised_np, 0, -1)
 
     # Enforce integers
     orig_np = orig_np.astype(np.uint8)
     noisy_np = noisy_np.astype(np.uint8)
     denoised_np = denoised_np.astype(np.uint8)
+    adv_image_np = adv_image_np.astype(np.uint8)
+    adv_denoised_np = adv_denoised_np.astype(np.uint8)
+    noise_np = noisy_np - orig_np
+    adv_noise_np = adv_image_np - orig_np
 
     fig = make_subplots(
-        rows=1, 
-        cols=3,
+        rows=2, 
+        cols=4,
         horizontal_spacing=0.1,
         vertical_spacing=0.1,
-        subplot_titles=['Clean Image', 'Noisy Image', 'Denoised Image'])
+        subplot_titles=['Clean Image', 'Noise', 'Noisy Image', 'Denoised Image', '', 'Adversarial Noise', 'Adversarial Noisy Image', 'Denoised Adversarial Image'])
 
-    fig.add_trace(
-        go.Image(
-            z=orig_np
-        ),
-        row=1,
-        col=1
-    )
-    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=1)
-    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=1)
+    plots = [
+        orig_np, noise_np, noisy_np, denoised_np,
+        None, adv_noise_np, adv_image_np, adv_denoised_np
+    ]
 
-    fig.add_trace(
-        go.Image(
-            z=noisy_np
-        ),
-        row=1,
-        col=2
-    )
-    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=2)
-    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=2)
+    for i, p in enumerate(plots):
+        if p is None:
+            continue
 
-    fig.add_trace(
-        go.Image(
-            z=denoised_np
-        ),
-        row=1,
-        col=3
-    )
-    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=3)
-    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=1, col=3)
+        row = (i // 4) + 1
+        col = (i % 4) + 1
+
+        fig.add_trace(
+            go.Image(
+                z=p
+            ),
+            row=row,
+            col=col
+        )
+        fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
+        fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
 
     fig.show()
 
@@ -69,10 +74,15 @@ def load_model():
     net = UNet()
     net.load_state_dict(torch.load(filename))
     net.eval()
+    
+    # Fix network
+    for p in net.parameters():
+        p.requires_grad = False
 
     # Parameters
     seed = 2
     batch_size = 1
+    epsilon = 5.0
 
     set_seed(seed)
 
@@ -81,12 +91,23 @@ def load_model():
     test_set_noisy = get_data('CIFAR10', False, 'gaussian')
 
     # Test
-    with torch.no_grad():
-        for i in range(len(test_set_noisy)):
-            orig_data, orig_label = test_set_original[i]
-            noisy_data, _ = test_set_noisy[i]
-            noisy_data = noisy_data.unsqueeze(0).float()
-            denoised_result = net(noisy_data)
+    for i in range(len(test_set_noisy)):
+        orig_data, orig_label = test_set_original[i]
+        noisy_data, _ = test_set_noisy[i]
 
-            display_images(orig_data, noisy_data, denoised_result)
-            input()
+        # Proper format
+        orig_data = orig_data.unsqueeze(0).float()
+        noisy_data = noisy_data.unsqueeze(0).float()
+
+        # Denoise
+        denoised_result = net(noisy_data)
+
+        # Call attack
+        adversarial_noise = DAG(net, orig_data, noisy_data)
+        adversarial_data = orig_data + adversarial_noise
+
+        # Denoise
+        adv_denoised_result = net(adversarial_data)
+
+        display_images(orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
+        print('check')
