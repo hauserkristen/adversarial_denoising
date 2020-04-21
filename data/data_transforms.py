@@ -19,13 +19,16 @@ class ToRGBTensor(object):
         return result
 
 class AddGaussianNoise(object):
-    def __init__(self, mean: float = 0.0, std: float = 50.0):
-        self.std = std
+    def __init__(self, mean: float = 0.0, max_std: float = 50.0):
+        self.max_std = max_std
         self.mean = mean
         
     def __call__(self, tensor):
+        # Sample std dev
+        std = np.random.uniform(0, self.max_std)
+
         # Sample gaussian
-        gaussian_samples = torch.randn(tensor.size()) * self.std + self.mean
+        gaussian_samples = torch.randn(tensor.size()) * std + self.mean
 
         # Create mask
         result = tensor.clone().float()

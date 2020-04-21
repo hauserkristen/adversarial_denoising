@@ -32,14 +32,16 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
     adv_image_np = np.moveaxis(adv_image_np, 0, -1)
     adv_denoised_np = np.moveaxis(adv_denoised_np, 0, -1)
 
+    # Calculate difference before casting
+    noise_np = noisy_np - orig_np
+    adv_noise_np = adv_image_np - orig_np
+
     # Enforce integers
     orig_np = orig_np.astype(np.uint8)
     noisy_np = noisy_np.astype(np.uint8)
     denoised_np = denoised_np.astype(np.uint8)
     adv_image_np = adv_image_np.astype(np.uint8)
     adv_denoised_np = adv_denoised_np.astype(np.uint8)
-    noise_np = noisy_np - orig_np
-    adv_noise_np = adv_image_np - orig_np
 
     fig = make_subplots(
         rows=2, 
@@ -101,12 +103,18 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
                 col=col
             )
         else:
+            # Define range
+            zmax = [255,255,255,255]
+            zmin = [0,0,0,0]
+            if col == 2:
+                zmin = [-255,-255,-255,-255]
+
             fig.add_trace(
                 go.Image(
                     z=p,
                     colormodel='rgb',
-                    zmax=[255,255,255,255],
-                    zmin=[0,0,0,0]
+                    zmax=zmax,
+                    zmin=zmin
                 ),
                 row=row,
                 col=col
