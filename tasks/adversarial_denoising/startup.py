@@ -12,6 +12,11 @@ from denoising import UNet
 from tasks import set_seed
 from .DAG import DAG
 
+def format_torch(x):
+    x = x.clamp(0,255)
+    x = torch.round(x)
+    return x
+
 def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
     orig_np = original_image.detach().numpy().squeeze(0)
     noisy_np = noisy_image.detach().numpy().squeeze(0)
@@ -101,13 +106,16 @@ def load_model():
 
         # Denoise
         denoised_result = net(noisy_data)
+        denoised_result = format_torch(denoised_result)
 
         # Call attack
         adversarial_noise = DAG(net, orig_data, noisy_data)
         adversarial_data = orig_data + adversarial_noise
+        adversarial_data = format_torch(adversarial_data)
 
         # Denoise
         adv_denoised_result = net(adversarial_data)
+        adv_denoised_result = format_torch(adv_denoised_result)
 
         display_images(orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
         print('check')
