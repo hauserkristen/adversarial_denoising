@@ -35,7 +35,7 @@ def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.5):
         condition = _check_condition(denoised_image, adv_target)
 
         if torch.sum(condition) == 0:
-            print("Condition Reached, no target difference")
+            print('Complete, No target difference')
             break
 
         # Finding pixels to purturb
@@ -58,7 +58,7 @@ def DAG(model, clean_image, adv_target, num_iterations=20, gamma=0.5):
         r_m_grad_mag = r_m_grad.norm()
         
         if r_m_grad_mag == 0:
-            print("Condition Reached, no gradient")
+            print('Complete, no gradient to apply')
             break
 
         #Calculating final value of r_m

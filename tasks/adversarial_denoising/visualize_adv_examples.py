@@ -3,20 +3,9 @@ import numpy as np
 from bisect import bisect
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from torch.nn import MSELoss
-import torch.nn.functional as F
-from torch.autograd import Variable
-from torch.optim import Adam
 
-from data import get_data
-from denoising import UNet
-from tasks import set_seed
+from .common import load_model_and_data, format_torch
 from .DAG import DAG
-
-def format_torch(x):
-    x = x.clamp(0,255)
-    x = torch.round(x)
-    return x
 
 def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
     orig_np = original_image.detach().numpy().squeeze(0)
@@ -124,29 +113,12 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
 
     fig.show()
 
-def load_model():
-    # Path to pretrained network weights
-    filename = 'denoising\\models\\n2n_gaussian_std_50.pt'
+def visualize_examples():
+    # Set noise type
+    noise_type = 'gaussian'
 
-    # Load network
-    net = UNet()
-    net.load_state_dict(torch.load(filename))
-    net.eval()
-    
-    # Fix network
-    for p in net.parameters():
-        p.requires_grad = False
-
-    # Parameters
-    seed = 2
-    batch_size = 1
-    epsilon = 5.0
-
-    set_seed(seed)
-
-    # Load CIFAR-10 data
-    test_set_original = get_data('CIFAR10', False)
-    test_set_noisy = get_data('CIFAR10', False, 'gaussian')
+    # Load data
+    net, test_set_original, test_set_noisy = load_model_and_data(noise_type)
 
     # Test
     for i in range(len(test_set_noisy)):
@@ -171,4 +143,4 @@ def load_model():
         adv_denoised_result = format_torch(adv_denoised_result)
 
         display_images(orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
-        print('check')
+        input('Press enter to continue...')

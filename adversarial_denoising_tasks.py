@@ -1,8 +1,11 @@
 from tasks import *
 
 def main():
-    # Read model
-    load_model()
+    # Visualize examples
+    visualize_examples()
+
+    # Calculate psnr
+    calculate_psnr()
 
     
 if __name__ == '__main__':
