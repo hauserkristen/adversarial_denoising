@@ -18,6 +18,15 @@ class ToRGBTensor(object):
         result = torch.from_numpy(result)
         return result
 
+class ScaleImage(object):
+    def __call__(self, x):
+        # Convert to float
+        result = x.float()
+
+        # Scale from [0,255] to [0,1]
+        result = torch.div(result, 255)
+        return result
+
 class AddGaussianNoise(object):
     def __init__(self, mean: float = 0.0, max_std: float = 50.0):
         self.max_std = max_std

@@ -21,16 +21,9 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
     adv_image_np = np.moveaxis(adv_image_np, 0, -1)
     adv_denoised_np = np.moveaxis(adv_denoised_np, 0, -1)
 
-    # Calculate difference before casting
+    # Calculate difference
     noise_np = noisy_np - orig_np
     adv_noise_np = adv_image_np - orig_np
-
-    # Enforce integers
-    orig_np = orig_np.astype(np.uint8)
-    noisy_np = noisy_np.astype(np.uint8)
-    denoised_np = denoised_np.astype(np.uint8)
-    adv_image_np = adv_image_np.astype(np.uint8)
-    adv_denoised_np = adv_denoised_np.astype(np.uint8)
 
     fig = make_subplots(
         rows=2, 
@@ -50,7 +43,7 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
 
         if p is None:
             # Create bins
-            bin_edges = np.arange(-255,260,5)
+            bin_edges = np.arange(-1,1.05,0.05)
             bins = (bin_edges[1:] + bin_edges[:-1]) / 2
 
             # Create histogram of noise distribution
@@ -93,10 +86,10 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
             )
         else:
             # Define range
-            zmax = [255,255,255,255]
+            zmax = [1,1,1,1]
             zmin = [0,0,0,0]
             if col == 2:
-                zmin = [-255,-255,-255,-255]
+                zmin = [-1,-1,-1,-1]
 
             fig.add_trace(
                 go.Image(
@@ -143,4 +136,6 @@ def visualize_examples():
         adv_denoised_result = format_torch(adv_denoised_result)
 
         display_images(orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
-        input('Press enter to continue...')
+        input('Press enter to see next example...')
+    
+    input('Press enter to close...')

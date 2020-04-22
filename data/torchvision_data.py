@@ -1,7 +1,7 @@
 from torchvision.datasets import MNIST, CIFAR10
 from torchvision.transforms import ToTensor, Compose
 
-from .data_transforms import get_noise, ToRGBTensor
+from .data_transforms import get_noise, ToRGBTensor, ScaleImage
 
 def get_data(data_name: str, train: bool, noise_transform: str = '', percent_noise=1.0):
     # Define transform
@@ -12,9 +12,9 @@ def get_data(data_name: str, train: bool, noise_transform: str = '', percent_noi
             trans = Compose([ToTensor(), get_noise(noise_transform, percent_noise)])
     else:
         if noise_transform == '':
-            trans = Compose([ToRGBTensor()])
+            trans = Compose([ToTensor()])
         else:
-            trans = Compose([ToRGBTensor(), get_noise(noise_transform, percent_noise)])
+            trans = Compose([ToRGBTensor(), get_noise(noise_transform, percent_noise), ScaleImage()])
 
     # Define download path
     data_path = 'data\\{}\\test\\'.format(data_name) if train else 'data\\{}\\train\\'.format(data_name)

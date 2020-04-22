@@ -5,8 +5,7 @@ from denoising import UNet
 from tasks import set_seed
 
 def format_torch(x):
-    x = x.clamp(0,255)
-    x = torch.round(x)
+    x = x.clamp(0,1)
     return x
 
 def load_model_and_data(noise_type: str, seed: int = 2):
