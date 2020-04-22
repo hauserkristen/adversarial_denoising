@@ -35,5 +35,7 @@ def calculate_psnr():
         adv_denoised_result = format_torch(adv_denoised_result)
 
         # Calculate PSNR for both denoised and adversarial denoised
-        denoised_psnr = psnr(denoised_result, orig_data)
-        adv_denoised_psnr = psnr(adv_denoised_result, orig_data)
+        denoised_psnr = psnr(denoised_result, orig_data).item()
+        adv_denoised_psnr = psnr(adv_denoised_result, orig_data).item()
+
+        print(denoised_psnr, adv_denoised_psnr)

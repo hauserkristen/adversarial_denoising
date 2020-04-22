@@ -2,7 +2,7 @@ from tasks import *
 
 def main():
     # Visualize examples
-    visualize_examples()
+    #visualize_examples()
 
     # Calculate psnr
     calculate_psnr()
