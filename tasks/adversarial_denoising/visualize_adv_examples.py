@@ -70,7 +70,7 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
                 go.Bar(
                     x=bins,
                     y=guassian_dist,
-                    name='Gaussian'
+                    name='Noise'
                 ),
                 row=row,
                 col=col

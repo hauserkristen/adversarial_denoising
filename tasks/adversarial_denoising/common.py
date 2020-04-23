@@ -13,7 +13,7 @@ def load_model_and_data(noise_type: str, seed: int = 2):
     if noise_type == 'gaussian':
         filename = 'denoising\\models\\n2n_gaussian_std_50.pt'
     else:
-        filename = 'denoising\\models\\n2n_poisson_lambda_50.pt'
+        filename = 'denoising\\models\\n2n_poisson_lambda_150.pt'
 
     # Load network
     net = UNet()
