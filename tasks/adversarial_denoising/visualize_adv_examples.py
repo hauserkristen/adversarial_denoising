@@ -108,7 +108,7 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
 
 def visualize_examples():
     # Set noise type
-    noise_type = 'gaussian'
+    noise_type = 'poisson'
 
     # Load data
     net, test_set_original, test_set_noisy = load_model_and_data(noise_type)

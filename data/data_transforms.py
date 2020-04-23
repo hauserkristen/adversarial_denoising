@@ -54,15 +54,12 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 class AddPoissonNoise(object):
-    def __init__(self, gamma: float = 10):
+    def __init__(self, gamma: float = 150):
         self.gamma = gamma
         
     def __call__(self, tensor):
-        # Sample gamma
-        gamma = np.random.uniform(0, self.gamma)
-
         # Sample poisson
-        poisson_dist = Poisson(gamma)
+        poisson_dist = Poisson(self.gamma)
         poisson_samples = poisson_dist.sample(tensor.size())
 
         # Create mask
