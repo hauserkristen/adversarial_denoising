@@ -8,11 +8,16 @@ from .unet import UNet
 
 import os
 import json
-import datetime
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
+def l0_loss(input, target):
+    """
+    Mode-seeking "L0" loss from Noise2Noise paper
+    """
+    return torch.mean(torch.pow(torch.abs(input - target) + 1e-8, 2))
 
 def psnr(input, target):
     """Computes peak signal-to-noise ratio."""
@@ -149,6 +154,8 @@ class Noise2Noise(object):
             # Loss function
             if self.p.loss == 'l2':
                 self.loss = nn.MSELoss()
+            elif self.p.loss == 'l0':
+                self.loss = l0_loss
             else:
                 self.loss = nn.L1Loss()
 
@@ -156,7 +163,7 @@ class Noise2Noise(object):
         self.use_cuda = torch.cuda.is_available() and self.p.cuda
         if self.use_cuda:
             self.model = self.model.cuda()
-            if self.trainable:
+            if self.trainable and self.p.loss != 'l0':
                 self.loss = self.loss.cuda()
 
     def _print_params(self):
