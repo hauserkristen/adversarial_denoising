@@ -2,11 +2,12 @@ import torchvision.transforms.functional as tvF
 from torch.utils.data import Dataset, DataLoader
 
 import os
+import torch
 import numpy as np
 from PIL import Image
 
 
-def load_dataset(root_dir, redux, params, shuffled=False, single=False):
+def load_dataset(root_dir, redux, params, shuffled=False, single=False, normalized=True):
     noise = (params.noise_type, params.noise_param)
 
     dataset = NoisyDataset(root_dir, redux, params.crop_size,
@@ -66,9 +67,20 @@ class NoisyDataset(AbstractDataset):
         # it is data dependent, meaning that adding sampled valued from a Poisson
         # will change the image intensity...
         if self.noise_type == 'poisson':
-            noise = np.random.poisson(img)
+            noise = np.random.poisson(self.noise_param, size=(w, h, c))
             noise_img = img + noise
-            noise_img = 255 * (noise_img / np.amax(noise_img))
+            noise_img = 255 * (noise_img / np.max(noise_img))
+
+        elif self.noise_type == 'impulse':
+            p = 0.2
+            if self.seed:
+                std = self.noise_param
+            else:
+                std = np.random.uniform(0, self.noise_param)
+            noise = np.random.normal(0, std, (h, w, c))
+            mask = np.random.uniform(0, 1, (h, w, c)) < p
+            noise[mask] = 0
+            noise_img = np.array(img) + noise
 
         # Normal distribution (default)
         else:
@@ -87,7 +99,7 @@ class NoisyDataset(AbstractDataset):
     def _corrupt(self, img):
         """Corrupts images (Gaussian or Poisson)."""
 
-        if self.noise_type in ['gaussian', 'poisson']:
+        if self.noise_type in ['gaussian', 'poisson', 'impulse']:
             return self._add_noise(img)
         else:
             raise ValueError('Invalid noise type: {}'.format(self.noise_type))
@@ -110,3 +122,17 @@ class NoisyDataset(AbstractDataset):
             target = tvF.to_tensor(self._corrupt(img))
 
         return source, target
+
+
+class ToRGBTensor(object):
+    """
+    Default ToTensor transform scale input to [0,1], this does not
+    """
+    def __call__(self, x):
+        # Convert from PIL image to numpy
+        result = np.asarray(x)
+        # Move axis to enforce same style as previous input
+        result = np.moveaxis(result, -1, 0)
+        # Convert from numpy to torch tensor
+        result = torch.from_numpy(result)
+        return result
