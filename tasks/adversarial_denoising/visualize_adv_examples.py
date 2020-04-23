@@ -114,7 +114,8 @@ def visualize_examples():
     net, test_set_original, test_set_noisy = load_model_and_data(noise_type)
 
     # Test
-    for i in range(len(test_set_noisy)):
+    num_exmamples = len(test_set_noisy)
+    for i in range(num_exmamples):
         orig_data, orig_label = test_set_original[i]
         noisy_data, _ = test_set_noisy[i]
 

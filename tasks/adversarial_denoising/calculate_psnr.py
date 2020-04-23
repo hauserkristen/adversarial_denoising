@@ -80,7 +80,6 @@ def calculate_psnr():
         noisy_psnr[i] = psnr(denoised_result, orig_data).item()
         adv_psnr[i] = psnr(adv_denoised_result, orig_data).item()
 
-
     # Create graph
     create_histogram(noisy_psnr, adv_psnr)
     input('Press enter to close...')
