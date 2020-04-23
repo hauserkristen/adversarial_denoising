@@ -67,9 +67,8 @@ class NoisyDataset(AbstractDataset):
         # it is data dependent, meaning that adding sampled valued from a Poisson
         # will change the image intensity...
         if self.noise_type == 'poisson':
-            noise = np.random.poisson(self.noise_param, size=(w, h, c))
-            noise_img = img + noise
-            noise_img = 255 * (noise_img / np.max(noise_img))
+            photons_per_pixel = np.random.uniform(self.noise_param, 1024)  # 1024 chosen rather arbitrarily based on 32x32 images
+            noise_img = np.random.poisson(np.array(img) / 255.0 * photons_per_pixel) / photons_per_pixel * 255
 
         elif self.noise_type == 'impulse':
             p = 0.2
