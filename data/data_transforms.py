@@ -1,8 +1,8 @@
 import torch
+from torch.distributions import Poisson, Normal
 import numpy as np
 
 # Noise types for RGB CIFAR10 data set
-
 class ToRGBTensor(object):
     """
     Default ToTensor transform scale input to [0,1], this does not
@@ -37,7 +37,8 @@ class AddGaussianNoise(object):
         std = np.random.uniform(0, self.max_std)
 
         # Sample gaussian
-        gaussian_samples = torch.randn(tensor.size()) * std + self.mean
+        gaussian_dist = Normal(self.mean, std)
+        gaussian_samples = gaussian_dist.sample(tensor.size())
 
         # Create mask
         result = tensor.clone().float()
@@ -50,7 +51,32 @@ class AddGaussianNoise(object):
         return result.type(torch.uint8)
     
     def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1}) with p={2}'.format(self.mean, self.std, self.p_noise)
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+class AddPoissonNoise(object):
+    def __init__(self, gamma: float = 10):
+        self.gamma = gamma
+        
+    def __call__(self, tensor):
+        # Sample gamma
+        gamma = np.random.uniform(0, self.gamma)
+
+        # Sample poisson
+        poisson_dist = Poisson(gamma)
+        poisson_samples = poisson_dist.sample(tensor.size())
+
+        # Create mask
+        result = tensor.clone().float()
+        result += poisson_samples
+        
+        # Rescale
+        result = result / torch.max(result)
+        result = result * 255
+
+        return result.type(torch.uint8)
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 # Noise types for the grayscale MNIST dataset
 class AddNoise(object):
@@ -126,6 +152,8 @@ def get_noise(noise_name: str, percent_noise: float):
         return AddGaussianGrayScaleNoise(percent_noise)
     elif noise_name == 'gaussian':
         return AddGaussianNoise()
+    elif noise_name == 'poisson':
+        return AddPoissonNoise()
     elif noise_name == 'snp':
         return AddSaltAndPepperNoise(percent_noise)
     else:
