@@ -11,7 +11,7 @@ def create_histogram(noisy_psnr, adv_psnr, num_bins = 25):
     # Create ratio
     # Anything >1 would mean that the denoised adversarial example resulted in a more noisy image
     # Anything <1 would mean that the denoised adversarial example resulted in a less noisy image
-    psnr_ratios = np.div(noisy_psnr, adv_psnr)
+    psnr_ratios = noisy_psnr / adv_psnr
 
     # Identify min and max values to create bins
     min_value = np.min(psnr_ratios)
