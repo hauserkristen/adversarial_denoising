@@ -42,34 +42,20 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
         col = (i % 4) + 1
 
         if p is None:
-            # Create bins
-            bin_edges = np.arange(-1,1.05,0.05)
-            bins = (bin_edges[1:] + bin_edges[:-1]) / 2
-
             # Create histogram of noise distribution
-            guassian_dist = np.zeros_like(bins)
-            adversarial_dist = np.zeros_like(bins)
+            noise_vals = []
+            adversarial_vals = []
             for j in range(noise_np.shape[0]):
                 for k in range(noise_np.shape[1]):
                     for l in range(noise_np.shape[2]):
-                        gausian_val = noise_np[j,k,l]
-                        adv_val = adv_noise_np[j,k,l]
-
-                        gaussian_bin = bisect(bin_edges[1:], gausian_val)
-                        if gaussian_bin >= bins.shape[0]:
-                            gaussian_bin = bins.shape[0]-1
-                        adv_bin = bisect(bin_edges[1:], adv_val)
-                        if adv_bin >= bins.shape[0]:
-                            adv_bin = bins.shape[0]-1
-
-                        guassian_dist[gaussian_bin] += 1
-                        adversarial_dist[adv_bin] += 1
+                        noise_vals.append(noise_np[j,k,l])
+                        adversarial_vals.append(adv_noise_np[j,k,l])
 
             # Add traces
             fig.add_trace(
-                go.Bar(
-                    x=bins,
-                    y=guassian_dist,
+                go.Histogram(
+                    x=noise_vals,
+                    nbinsx=10,
                     name='Noise'
                 ),
                 row=row,
@@ -77,8 +63,8 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
             )
             fig.add_trace(
                 go.Bar(
-                    x=bins,
-                    y=adversarial_dist,
+                    x=adversarial_vals,
+                    nbinsx=10,
                     name='Adversarial'
                 ),
                 row=row,
