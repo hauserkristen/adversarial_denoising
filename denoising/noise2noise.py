@@ -13,11 +13,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
+
 def l0_loss(input, target):
     """
     Mode-seeking "L0" loss from Noise2Noise paper
     """
     return torch.mean(torch.pow(torch.abs(input - target) + 1e-8, 2))
+
 
 def psnr(input, target):
     """Computes peak signal-to-noise ratio."""
@@ -31,7 +33,6 @@ def show_on_report(batch_idx, num_batches, loss, elapsed):
     clear_line()
     dec = int(np.ceil(np.log10(num_batches)))
     print('Batch {:>{dec}d} / {:d} | Avg loss: {:>1.5f} | Avg train time / batch: {:d} ms'.format(batch_idx + 1, num_batches, loss, int(elapsed), dec=dec))
-
 
 
 def clear_line():
@@ -58,7 +59,6 @@ def progress_bar(batch_idx, num_batches, report_interval, train_loss):
     progress = (batch_idx % report_interval) / report_interval
     fill = int(progress * bar_size) + 1
     print('\rBatch {:>{dec}d} [{}{}] Train loss: {:>1.5f}'.format(batch_idx + 1, '=' * fill + '>', ' ' * (bar_size - fill), train_loss, dec=str(dec)), end='')
-
 
 
 def plot_per_epoch(ckpt_dir, title, measurements, y_label):

@@ -45,8 +45,7 @@ class AddGaussianNoise(object):
         result += gaussian_samples
         
         # Clamp
-        result[result < 0] = 0
-        result[result > 255] = 255
+        result = torch.clamp(result, 0, 255)
 
         return result.type(torch.uint8)
     
@@ -54,21 +53,22 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 class AddPoissonNoise(object):
-    def __init__(self, lambda_val: float = 150):
-        self.lambda_val = lambda_val
+    def __init__(self, mean: int = 500, dispersion: int = 75):
+        self.mean = mean
+        self.dispersion = dispersion
         
     def __call__(self, tensor):
-        # Sample poisson
-        poisson_dist = Poisson(self.lambda_val)
-        poisson_samples = poisson_dist.sample(tensor.size())
-
-        # Create mask
-        result = tensor.clone().float()
-        result += poisson_samples
+        # Calculate photons per pixels\
+        photons_per_pixel = np.random.negative_binomial(self.mean / self.dispersion, 1 / self.mean) / self.mean * self.dispersion
         
-        # Rescale
-        result = result / torch.max(result)
-        result = result * 255
+        # Sample poisson
+        poisson_params = torch.mul(torch.div(tensor, 255.0), photons_per_pixel)
+        poisson_dist = Poisson(poisson_params)
+        poisson_samples = poisson_dist.sample()
+        result = torch.mul(torch.div(poisson_samples, photons_per_pixel), 255.0)
+
+        # Clamp
+        result = torch.clamp(result, 0, 255)
 
         return result.type(torch.uint8)
     
