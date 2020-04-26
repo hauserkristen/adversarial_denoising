@@ -17,7 +17,7 @@ def load_model_and_data(noise_type: str, seed: int = 2):
 
     # Load network
     net = UNet()
-    net.load_state_dict(torch.load(filename))
+    net.load_state_dict(torch.load(filename, map_location=torch.device('cpu')))
     net.eval()
     
     # Fix network
