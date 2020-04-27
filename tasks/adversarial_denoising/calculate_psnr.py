@@ -1,6 +1,5 @@
 import os
 import torch
-import psutil
 import numpy as np
 from bisect import bisect
 import plotly.graph_objects as go
@@ -37,7 +36,7 @@ def create_histogram(noisy_psnr, adv_psnr, noise_type, num_bins = 25):
 
 def calculate_psnr():
     # Set noise type
-    noise_type = 'gaussian'
+    noise_type = 'poisson'
 
     # Load data
     net, test_set_original, test_set_noisy = load_model_and_data(noise_type)

@@ -1,13 +1,15 @@
+import os
 import torch
 import numpy as np
 from bisect import bisect
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.offline as plt_offline
 
 from .common import load_model_and_data, format_torch
 from .DAG import DAG
 
-def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
+def display_images(noise_type: str, image_index: int, original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
     orig_np = original_image.detach().numpy().squeeze(0)
     noisy_np = noisy_image.detach().numpy().squeeze(0)
     denoised_np = denoised_image.detach().numpy().squeeze(0)
@@ -55,21 +57,23 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
             fig.add_trace(
                 go.Histogram(
                     x=noise_vals,
-                    nbinsx=10,
+                    nbinsx=25,
                     name='Noise'
                 ),
                 row=row,
                 col=col
             )
             fig.add_trace(
-                go.Bar(
+                go.Histogram(
                     x=adversarial_vals,
-                    nbinsx=10,
+                    nbinsx=25,
                     name='Adversarial'
                 ),
                 row=row,
                 col=col
             )
+            fig.update_layout(bargap=0.15)
+
         else:
             # Define range
             zmax = [1,1,1,1]
@@ -90,18 +94,35 @@ def display_images(original_image: torch.Tensor, noisy_image: torch.Tensor, deno
             fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
             fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False, row=row, col=col)
 
-    fig.show()
+    # Format figure
+    fig.update_layout(
+        legend={
+            'x': -0.1, 
+            'y': 0.0
+        }
+    )
+
+    # Save figure
+    if not os.path.exists('images//{}'.format(noise_type)):
+        os.mkdir('images//{}'.format(noise_type))
+
+    filename = 'images//{}//image_{}.html'.format(noise_type, image_index)
+    plt_offline.plot(fig, filename=filename, auto_open=False)
 
 def visualize_examples():
-    # Set noise type
+    # Set noise type and number of samples to save
     noise_type = 'poisson'
+    num_samples = 25
 
     # Load data
     net, test_set_original, test_set_noisy = load_model_and_data(noise_type)
 
-    # Test
+    # Randomly choose indices
     num_examples = len(test_set_noisy)
-    for i in range(num_examples):
+    save_indices = np.random.randint(num_examples, size=num_samples)
+
+    # Test
+    for i in save_indices:
         orig_data, orig_label = test_set_original[i]
         noisy_data, _ = test_set_noisy[i]
 
@@ -122,7 +143,4 @@ def visualize_examples():
         adv_denoised_result = net(adversarial_data)
         adv_denoised_result = format_torch(adv_denoised_result)
 
-        display_images(orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
-        input('Press enter to see next example...')
-    
-    input('Press enter to close...')
+        display_images(noise_type, i, orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
