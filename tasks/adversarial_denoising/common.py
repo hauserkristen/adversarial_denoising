@@ -8,12 +8,24 @@ def format_torch(x):
     x = x.clamp(0,1)
     return x
 
-def load_model_and_data(noise_type: str, seed: int = 2):
+def load_model_and_data(noise_type: str, noise_param: int, seed: int = 2):
     # Path to pretrained network weights
-    if noise_type == 'gaussian':
+    if noise_type == 'gaussian' and noise_param == 50:
         filename = 'denoising\\models\\n2n_gaussian_std_50.pt'
-    else:
+    elif noise_type == 'gaussian' and noise_param == 100:
+        filename = 'denoising\\models\\n2n_gaussian_std_100.pt'
+    elif noise_type == 'poisson' and noise_param == 100:
+        filename = 'denoising\\models\\n2n_poisson_100.pt'
+    elif noise_type == 'poisson' and noise_param == 200:
+        filename = 'denoising\\models\\n2n_poisson_200.pt'
+    elif noise_type == 'poisson' and noise_param == 500:
         filename = 'denoising\\models\\n2n_poisson_500.pt'
+    elif noise_type == 'impulse' and noise_param == 0.5:
+        filename = 'denoising\\models\\n2n_impulse_std50_p0.5.pt'
+    elif noise_type == 'impulse' and noise_param == 0.8:
+        filename = 'denoising\\models\\n2n_impulse_std50_p0.8.pt'
+    else:
+        raise Exception('Unknown model parameterization.')
 
     # Load network
     net = UNet()
@@ -29,6 +41,6 @@ def load_model_and_data(noise_type: str, seed: int = 2):
 
     # Load CIFAR-10 data
     test_set_original = get_data('CIFAR10', False)
-    test_set_noisy = get_data('CIFAR10', False, noise_type)
+    test_set_noisy = get_data('CIFAR10', False, noise_type, noise_param)
 
     return net, test_set_original, test_set_noisy

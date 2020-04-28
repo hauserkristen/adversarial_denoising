@@ -3,18 +3,18 @@ from torchvision.transforms import ToTensor, Compose
 
 from .data_transforms import get_noise, ToRGBTensor, ScaleImage
 
-def get_data(data_name: str, train: bool, noise_transform: str = '', percent_noise=1.0):
+def get_data(data_name: str, train: bool, noise_type: str = '', noise_param: int = 0, percent_noise: float = 1.0):
     # Define transform
     if data_name == 'MNIST':
-        if noise_transform == '':
+        if noise_type == '':
             trans = Compose([ToTensor()])
         else:
-            trans = Compose([ToTensor(), get_noise(noise_transform, percent_noise)])
+            trans = Compose([ToTensor(), get_noise(noise_type, noise_param, percent_noise)])
     else:
-        if noise_transform == '':
+        if noise_type == '':
             trans = Compose([ToTensor()])
         else:
-            trans = Compose([ToRGBTensor(), get_noise(noise_transform, percent_noise), ScaleImage()])
+            trans = Compose([ToRGBTensor(), get_noise(noise_type, noise_param, percent_noise), ScaleImage()])
 
     # Define download path
     data_path = 'data\\{}\\test\\'.format(data_name) if train else 'data\\{}\\train\\'.format(data_name)

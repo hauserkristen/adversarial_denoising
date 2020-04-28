@@ -12,7 +12,7 @@ def evaluate_noise(net, data_name, noise_name, b_size, seed_val, rerun=False):
     if rerun:
         for p in percent_noise:
             set_seed(seed_val)
-            test_data = get_data(data_name, False, noise_name, p)
+            test_data = get_data(data_name, False, noise_type=noise_name, percent_noise=p)
             test_data_loader = torch.utils.data.DataLoader(test_data, b_size, shuffle=True)
 
             set_seed(seed_val)

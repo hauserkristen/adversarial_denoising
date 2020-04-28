@@ -28,7 +28,7 @@ def visualize_noisy_affects_filter():
 
     # Download MNIST data set
     set_seed(seed)
-    test_set_n = get_data(data_name, False, noise_type, 0.1)
+    test_set_n = get_data(data_name, False, noise_type=noise_type, percent_noise=0.1)
     test_set = get_data(data_name, False)
     
     # Create models

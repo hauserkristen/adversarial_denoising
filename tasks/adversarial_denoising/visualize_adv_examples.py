@@ -9,7 +9,7 @@ import plotly.offline as plt_offline
 from .common import load_model_and_data, format_torch
 from .DAG import DAG
 
-def display_images(noise_type: str, image_index: int, original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
+def display_images(dir_name: str, image_index: int, original_image: torch.Tensor, noisy_image: torch.Tensor, denoised_image: torch.Tensor, adv_image: torch.Tensor, denoised_adv_image: torch.Tensor):
     orig_np = original_image.detach().numpy().squeeze(0)
     noisy_np = noisy_image.detach().numpy().squeeze(0)
     denoised_np = denoised_image.detach().numpy().squeeze(0)
@@ -102,20 +102,26 @@ def display_images(noise_type: str, image_index: int, original_image: torch.Tens
         }
     )
 
-    # Save figure
-    if not os.path.exists('images//{}'.format(noise_type)):
-        os.mkdir('images//{}'.format(noise_type))
+    # Create save directory name
+    full_directory = 'images//adv_examples//{}'.format(dir_name)
+    full_directory = full_directory.replace('.', '')
 
-    filename = 'images//{}//image_{}.html'.format(noise_type, image_index)
+    # Create directory if required
+    if not os.path.exists(full_directory):
+        os.mkdir(full_directory)
+
+    # Save figure
+    filename = '{}//image_{}.html'.format(full_directory, image_index)
     plt_offline.plot(fig, filename=filename, auto_open=False)
 
 def visualize_examples():
     # Set noise type and number of samples to save
     noise_type = 'poisson'
+    noise_param = 500
     num_samples = 25
 
     # Load data
-    net, test_set_original, test_set_noisy = load_model_and_data(noise_type)
+    net, test_set_original, test_set_noisy = load_model_and_data(noise_type, noise_param)
 
     # Randomly choose indices
     num_examples = len(test_set_noisy)
@@ -143,4 +149,6 @@ def visualize_examples():
         adv_denoised_result = net(adversarial_data)
         adv_denoised_result = format_torch(adv_denoised_result)
 
-        display_images(noise_type, i, orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)
+        # Display and save image
+        dir_name = '{}_{}'.format(noise_type, noise_param)
+        display_images(dir_name, i, orig_data, noisy_data, denoised_result, adversarial_data, adv_denoised_result)

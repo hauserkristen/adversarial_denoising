@@ -1,5 +1,5 @@
 import torch
-from torch.distributions import Poisson, Normal
+from torch.distributions import Poisson, Normal, Uniform
 import numpy as np
 
 # Noise types for RGB CIFAR10 data set
@@ -28,7 +28,7 @@ class ScaleImage(object):
         return result
 
 class AddGaussianNoise(object):
-    def __init__(self, mean: float = 0.0, max_std: float = 50.0):
+    def __init__(self, mean: float, max_std: float):
         self.max_std = max_std
         self.mean = mean
         
@@ -53,7 +53,7 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 class AddPoissonNoise(object):
-    def __init__(self, mean: int = 500, dispersion: int = 75):
+    def __init__(self, mean: int , dispersion: int):
         self.mean = mean
         self.dispersion = dispersion
         
@@ -73,7 +73,39 @@ class AddPoissonNoise(object):
         return result.type(torch.uint8)
     
     def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, dispersion={1})'.format(self.mean, self.dispersion)
+
+class AddImpulseNoise(object):
+    def __init__(self, p: float, mean: float, max_std: float):
+        self.p = p
+        self.max_std = max_std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        # Sample std dev
+        std = np.random.uniform(0, self.max_std)
+
+        # Sample gaussian
+        gaussian_dist = Normal(self.mean, std)
+        gaussian_samples = gaussian_dist.sample(tensor.size())
+
+        # Create mask
+        uniform_dist = Uniform(0,1)
+        mask = uniform_dist.sample(tensor.size()) < self.p
+        gaussian_samples[mask] = 0
+
+        # Add noise
+        result = tensor.clone().float()
+        result += gaussian_samples
+        
+        # Clamp
+        result = torch.clamp(result, 0, 255)
+
+        return result.type(torch.uint8)
+    
+    def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
 
 # Noise types for the grayscale MNIST dataset
 class AddNoise(object):
@@ -144,14 +176,16 @@ class AddSaltAndPepperNoise(AddNoise):
         return self.__class__.__name__ + ' with p={0}'.format(self.p_noise)
 
 
-def get_noise(noise_name: str, percent_noise: float):
+def get_noise(noise_name: str, noise_param: float, percent_noise: float):
     if noise_name == 'gaussian_gray':
         return AddGaussianGrayScaleNoise(percent_noise)
-    elif noise_name == 'gaussian':
-        return AddGaussianNoise()
-    elif noise_name == 'poisson':
-        return AddPoissonNoise()
     elif noise_name == 'snp':
         return AddSaltAndPepperNoise(percent_noise)
+    elif noise_name == 'gaussian':
+        return AddGaussianNoise(0, noise_param)
+    elif noise_name == 'poisson':
+        return AddPoissonNoise(noise_param, 75)
+    elif noise_name == 'impulse':
+        return AddImpulseNoise(noise_param, 0, 50)
     else:
-        raise NotImplementedError('Unknown noise type: {0}. Available noise types: [gaussian_gray, gaussian, snp]'.format(noise_name))
+        raise NotImplementedError('Unknown noise type: {0}. Available noise types: [gaussian_gray, snp, gaussian, poisson, impulse]'.format(noise_name))

@@ -37,9 +37,10 @@ def create_histogram(noisy_psnr, adv_psnr, noise_type, num_bins = 25):
 def calculate_psnr():
     # Set noise type
     noise_type = 'poisson'
+    noise_param = 500
 
     # Load data
-    net, test_set_original, test_set_noisy = load_model_and_data(noise_type)
+    net, test_set_original, test_set_noisy = load_model_and_data(noise_type, noise_param)
 
     # Test
     num_examples = len(test_set_noisy)

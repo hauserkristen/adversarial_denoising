@@ -19,7 +19,7 @@ def _check_condition(output, target):
                 condition[0,:,i,j] = 1.0
     return condition
 
-def DAG(model, clean_image, adv_target, num_iterations=30, gamma=0.1):
+def DAG(model, clean_image, adv_target, num_iterations=40, gamma=0.1):
     # Creat adversarial image to be optimized
     adv_noise = torch.zeros_like(clean_image)
     adv_noise.requires_grad = True
