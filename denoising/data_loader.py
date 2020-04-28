@@ -91,8 +91,6 @@ class NoisyDataset(AbstractDataset):
             else:
                 std = np.random.uniform(0, self.noise_param)
             noise = np.random.normal(0, std, (h, w, c))
-
-            # Add noise and clip
             noise_img = np.array(img) + noise
 
         noise_img = np.clip(noise_img, 0, 255).astype(np.uint8)
