@@ -91,7 +91,7 @@ class AddImpulseNoise(object):
 
         # Create mask
         uniform_dist = Uniform(0,1)
-        mask = uniform_dist.sample(tensor.size()) < self.p
+        mask = uniform_dist.sample(tensor.size()) > self.p
         gaussian_samples[mask] = 0
 
         # Add noise
