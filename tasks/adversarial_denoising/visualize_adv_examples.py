@@ -116,8 +116,8 @@ def display_images(dir_name: str, image_index: int, original_image: torch.Tensor
 
 def visualize_examples():
     # Set noise type and number of samples to save
-    noise_type = 'poisson'
-    noise_param = 500
+    noise_type = 'impulse'
+    noise_param = 0.2
     num_samples = 25
 
     # Load data

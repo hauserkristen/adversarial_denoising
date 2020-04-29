@@ -24,6 +24,8 @@ def load_model_and_data(noise_type: str, noise_param: int, seed: int = 2):
         filename = 'denoising\\models\\n2n_impulse_std50_p0.5.pt'
     elif noise_type == 'impulse' and noise_param == 0.8:
         filename = 'denoising\\models\\n2n_impulse_std50_p0.8.pt'
+    elif noise_type == 'impulse' and noise_param == 0.2:
+        filename = 'denoising\\models\\n2n_impulse_std50_p0.2.pt'
     else:
         raise Exception('Unknown model parameterization.')
 
