@@ -9,7 +9,7 @@ from .common import load_model_and_data, format_torch
 from .DAG import DAG
 from denoising import psnr
 
-def create_histogram(noisy_psnr, adv_psnr, noise_type, num_bins = 25):
+def create_histogram(noise_desc, noisy_psnr, adv_psnr, num_bins = 25):
     # Create ratio
     # Anything >1 would mean that the denoised adversarial example resulted in a more noisy image
     # Anything <1 would mean that the denoised adversarial example resulted in a less noisy image
@@ -27,17 +27,21 @@ def create_histogram(noisy_psnr, adv_psnr, noise_type, num_bins = 25):
 
     fig.update_layout(bargap=0.15)
 
-    # Save figure
+    # Create directory if required
     if not os.path.exists('images//psnr'):
         os.mkdir('images//psnr')
 
-    filename = 'images//psnr//{}.html'.format(noise_type)
+    # Replace illegal characters
+    filename = 'images//psnr//{}.html'.format(noise_desc)
+    filename = filename.replace('.', '')
+
+    # Save figure
     plt_offline.plot(fig, filename=filename, auto_open=False)
 
 def calculate_psnr():
     # Set noise type
-    noise_type = 'poisson'
-    noise_param = 500
+    noise_type = 'impulse'
+    noise_param = 0.8
 
     # Load data
     net, test_set_original, test_set_noisy = load_model_and_data(noise_type, noise_param)
@@ -72,4 +76,5 @@ def calculate_psnr():
         adv_psnr[i] = psnr(adv_denoised_result, orig_data).item()
 
     # Create graph
-    create_histogram(noisy_psnr, adv_psnr, noise_type)
+    noise_desc = '{}_{}'.format(noise_type, noise_param)
+    create_histogram(noise_desc, noisy_psnr, adv_psnr)
