@@ -15,7 +15,7 @@ NOISE_CONFIGS = [
     ('poisson', 100, 'Poisson<br>&#956;=100, dispersion=75'),
     ('poisson', 200, 'Poisson<br>&#956;=200, dispersion=75'),
     ('poisson', 500, 'Poisson<br>&#956;=500, dispersion=75'),
-    ('impulse', 0.8, 'Impulse<br>p=0.8'),
+    ('impulse', 0.2, 'Impulse<br>p=0.2'),
     ('impulse', 0.5, 'Impulse<br>p=0.5')
 ]
 
@@ -165,7 +165,7 @@ def display_images(image_index, results):
 def visualize_final_examples():
     # Set choosen index
     num_samples = 25
-    selected_index = 5034
+    selected_index = 1099
 
     # Get images for every noise config
     results = []
