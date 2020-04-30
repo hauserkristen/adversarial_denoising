@@ -5,7 +5,10 @@ def main():
     #visualize_examples()
 
     # Calculate psnr
-    calculate_psnr()
+    #calculate_psnr()
+
+    # Visualize final in compact form
+    visualize_final_examples()
 
     
 if __name__ == '__main__':

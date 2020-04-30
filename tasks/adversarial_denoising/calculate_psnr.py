@@ -32,8 +32,7 @@ def create_histogram(noise_desc, noisy_psnr, adv_psnr, num_bins = 25):
         os.mkdir('images//psnr')
 
     # Replace illegal characters
-    filename = 'images//psnr//{}.html'.format(noise_desc)
-    filename = filename.replace('.', '')
+    filename = 'images//psnr//{}.html'.format(noise_desc.replace('.', ''))
 
     # Save figure
     plt_offline.plot(fig, filename=filename, auto_open=False)
